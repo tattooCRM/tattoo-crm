@@ -5,21 +5,60 @@ function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-    console.log('Login with', email, password);
+  const handleLogin = async (e) => {
+    e.preventDefault(); // correction ici
+    setError('');
+    setLoading(true);
+
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Erreur lors de la connexion');
+      }
+
+      // Stockage du token et des infos user
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+
+      console.log('Connexion réussie:', data);
+      window.location.href = "/dashboard";
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-neutral-100 text-white">
       <div className="w-full max-w-md p-8 bg-zinc-900 rounded-xl shadow-lg">
+        
+        {/* Titre */}
         <h1 className="text-3xl font-bold mb-6 text-center font-serif tracking-wider">
           InkFlow
         </h1>
 
+        {/* Message d'erreur */}
+        {error && (
+          <p className="bg-red-500/20 text-red-400 px-3 py-2 mb-4 rounded">
+            {error}
+          </p>
+        )}
+
+        {/* Formulaire */}
         <form onSubmit={handleLogin} className="space-y-5">
-          {/* Champ Email */}
+          
+          {/* Email */}
           <div>
             <label className="block mb-1 text-sm font-medium">Email</label>
             <input
@@ -32,7 +71,7 @@ function Login() {
             />
           </div>
 
-          {/* Champ mot de passe avec icône Lucide */}
+          {/* Mot de passe */}
           <div>
             <label className="block mb-1 text-sm font-medium">Mot de passe</label>
             <div className="relative">
@@ -58,15 +97,16 @@ function Login() {
           {/* Bouton Connexion */}
           <button
             type="submit"
-            className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 transition-colors rounded-md font-semibold"
+            disabled={loading}
+            className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 transition-colors rounded-md font-semibold disabled:opacity-50"
           >
-            Connexion
+            {loading ? 'Connexion...' : 'Se connecter'}
           </button>
 
-          {/* Lien mot de passe oublié */}
+          {/* Lien vers inscription */}
           <div className="text-sm text-center mt-2">
-            <a href="#" className="text-indigo-400 hover:underline">
-              Mot de passe oublié ?
+            <a href="/signup" className="text-indigo-400 hover:underline">
+              Pas encore inscrit ? Créez un compte
             </a>
           </div>
         </form>

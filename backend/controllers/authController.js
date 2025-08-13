@@ -1,41 +1,66 @@
 const User = require('../models/User');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET | 'inkflowSecret';
-
 exports.registerUser = async (req, res) => {
-    try {
-        const { nom, email, motDePasse } = req.body;
+  try {
+    const { name, email, password, role } = req.body;
 
-        const userExists = await User.findOne({ email });
-        if (userExists) return res.status(400).json({ message: 'Email déjà utilisé.'});
-
-        const hashedPassword = await bcrypt.hash(motDePasse, 10);
-        
-        const user = new User({ nom, email, motDePasse: hashedPassword });
-        await user.save();
-
-        res.status(201).json({ message: 'Utilisateur créé avec succès.'});
-    } catch (err) {
-        res.status(500).json({ error: err.message})
+    // Vérification champs
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'Tous les champs sont obligatoires' });
     }
+
+    // Vérifier si l'email existe déjà
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Cet email est déjà utilisé' });
+    }
+
+    // Hash du mot de passe
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Création utilisateur
+    const user = new User({
+      name,
+      email,
+      password: hashedPassword,
+      role
+    });
+
+    await user.save();
+
+    res.status(201).json({ message: 'Utilisateur créé avec succès' });
+console.log(req.body);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 exports.loginUser = async (req, res) => {
-    try {
-        const { email, motDePasse } = req.body;
+  try {
+    const { email, password } = req.body;
 
-        const user = await User.findOne({ email });
-        if(!user) return res.status(401).json({ message: 'Utilisateur non trouvé.'});
-
-        const isMatch = await bcrypt.compare(motDePasse, user.motDePasse);
-        if(!isMatch) return res.status(401).json({ message: 'Mot de passe incorrect.'});
-
-        const token = jwt.sign({ userId: user._id, role: user.role}, JWT_SECRET, { expiresIn: '1h'})
-
-        res.status(200).json({ token, user: { nom: user.nom, email: user.email, role: user.role }});
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+    // Vérification utilisateur
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: 'Email ou mot de passe invalide' });
     }
-}
+
+    // Vérification mot de passe
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Email ou mot de passe invalide' });
+    }
+
+    // Création token
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
+      expiresIn: '1d'
+    });
+
+    res.json({ token });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
