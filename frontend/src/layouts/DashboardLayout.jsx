@@ -1,20 +1,20 @@
 import { Outlet } from "react-router-dom";
 import Sidebar from "../assets/components/Sidebar";
-import PageHeader from "../assets/components/PageHeader";
+import HeaderDash from "../assets/components/HeaderDash"; // ta petite nav bar
 
 export default function DashboardLayout() {
   return (
-    <div className="flex">
+    <div className="flex h-screen">
       <Sidebar />
-      <main className="flex-1 flex flex-col">
-        <PageHeader
-          breadcrumbs={["Tasks", "Task report"]}
-          onSearch={(value) => console.log("Recherche :", value)}
-        />
-        <div className="p-4">
+      <div className="flex-1 flex flex-col">
+        {/* Navbar en haut */}
+        <HeaderDash />
+
+        {/* Contenu de la page */}
+        <main className="flex-1 p-4 bg-gray-50">
           <Outlet />
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

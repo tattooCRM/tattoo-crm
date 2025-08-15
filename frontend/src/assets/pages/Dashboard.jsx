@@ -1,13 +1,9 @@
-import PageHeader from "../components/PageHeader";
+import KPICards from '../components/KPICards';
 
 function Dashboard() {
   return (
     <div>
-      <PageHeader
-        breadcrumbs={[]}
-        onSearch={(value) => console.log("Recherche :", value)}
-      />
-      <h1>Bienvenue dans le dashboard InkFlow ✍️</h1>
+      <KPICards/>
     </div>
   );
 }
