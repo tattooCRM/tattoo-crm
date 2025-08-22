@@ -8,8 +8,8 @@ import Signup from './assets/pages/Signup';
 import Dashboard from './assets/pages/Dashboard';
 
 // Module Dashboard
-// import Agenda from './assets/pages/dashboard/Agenda';
-// import Clients from './assets/pages/dashboard/Clients';
+import Agenda from './assets/pages/dashboard/Agenda';
+import Clients from './assets/pages/dashboard/Clients';
 // import Projets from './assets/pages/dashboard/Projets';
 // import Devis from './assets/pages/dashboard/Devis';
 // import Paiements from './assets/pages/dashboard/Paiements';
@@ -34,21 +34,21 @@ function App() {
         {/* Pages dashboard avec Sidebar */}
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
-          {/* <Route path="/dashboard/agenda" element={<Agenda />} />
-          <Route path="/dashboard/clients" element={<Clients />} />
-          <Route path="/dashboard/projets" element={<Projets />} />
-          <Route path="/dashboard/devis" element={<Devis />} />
-          <Route path="/dashboard/paiements" element={<Paiements />} />
-          <Route path="/dashboard/stock" element={<Stock />} />
-          <Route path="/messages" element={<Messages />} /> */}
+          <Route path="/agenda" element={<Agenda />} />
+          <Route path="/clients" element={<Clients />} />
+          {/* <Route path="/projets" element={<Projets />} />
+          <Route path="/devis" element={<Devis />} />
+          <Route path="/paiements" element={<Paiements />} />
+          <Route path="/stock" element={<Stock />} />
+          <Route path="/messages" element={<Messages />} />
 
           {/* Instagram */}
-          {/* <Route path="/instagram/messages" element={<InstaMessages />} />
+          {/*<Route path="/instagram/messages" element={<InstaMessages />} />
           <Route path="/instagram/planifies" element={<InstaPlanifies />} />
           <Route path="/instagram/brouillons" element={<InstaBrouillons />} />
           <Route path="/instagram/publies" element={<InstaPublies />} /> */}
-
         </Route>
+
       </Routes>
     </Router>
   );
