@@ -1,15 +1,21 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 const authRoutes = require('./routes/authRoutes');
 const eventRoutes = require('./routes/eventRoutes');
+const publicPageRoutes = require('./routes/publicPageRoutes');
 
 const app = express();
 
 // Middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Servir les fichiers statiques uploadés
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
 // CORS pour autoriser ton frontend sur Vite (5173 et 5174)
@@ -21,6 +27,7 @@ app.use(cors({
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/public-pages', publicPageRoutes);
 
 // Connexion MongoDB
 mongoose.connect(process.env.MONGO_URI)

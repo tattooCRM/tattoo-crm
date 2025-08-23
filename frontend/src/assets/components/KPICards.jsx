@@ -1,18 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { RotateCw } from "lucide-react";
 import KPISection from "./KPISection";
 import PublicPageBox from "./PublicPageBox";
 import AppointmentsSection from "./AppointmentsSection";
 import AppointmentModal from "./AppointmentModal";
 import PublicPageModal from "./PublicPageModal";
-
-const appointments = [
-  { time: "09:00", name: "Alice Dupont", style: "Old School", status: "Confirmé", statusColor: "bg-green-200 text-green-700" },
-  { time: "11:30", name: "Maxime Leroy", style: "Réalisme", status: "En attente", statusColor: "bg-yellow-200 text-yellow-700" },
-  { time: "14:00", name: "Chloé Martin", style: "Minimaliste", status: "Confirmé", statusColor: "bg-green-200 text-green-700" },
-  { time: "16:00", name: "Lucas Bernard", style: "Traditionnel", status: "Confirmé", statusColor: "bg-green-200 text-green-700" },
-  { time: "18:00", name: "Emma Roche", style: "Old School", status: "En attente", statusColor: "bg-yellow-200 text-yellow-700" },
-];
+import { useEvents } from "../../hooks/useEvents";
+import { usePublicPages } from "../../hooks/usePublicPages";
 
 export default function KPICards() {
   const [showApptModal, setShowApptModal] = useState(false);
@@ -20,27 +14,60 @@ export default function KPICards() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   const [showPageModal, setShowPageModal] = useState(false);
-  const [hasPage, setHasPage] = useState(false);
+  const [pageRefreshKey, setPageRefreshKey] = useState(0);
+
+  // Utiliser les hooks
+  const { getUpcomingAppointments, refreshEvents, loading } = useEvents();
+  const { page: userPage, loading: pageLoading, lastUpdate } = usePublicPages();
+
+  // Effect pour rafraîchir quand lastUpdate change
+  useEffect(() => {
+    if (lastUpdate > 0) {
+      setPageRefreshKey((prev) => prev + 1);
+    }
+  }, [lastUpdate]);
 
   const openApptModal = (appt) => {
     setCurrentAppt(appt);
     setShowApptModal(true);
   };
 
+  const handleRefresh = () => {
+    refreshEvents();
+    setRefreshKey((prev) => prev + 1);
+    setPageRefreshKey((prev) => prev + 1);
+  };
+
+  const handlePageModalClose = () => {
+    setShowPageModal(false);
+    // Refresh la page après fermeture du modal
+    setTimeout(() => {
+      setPageRefreshKey((prev) => prev + 1);
+    }, 100);
+  };
+
+  // Obtenir les prochains RDV depuis la base de données
+  const upcomingAppointments = getUpcomingAppointments(5);
+
   return (
     <div className="p-6 bg-white shadow-md rounded-lg flex gap-6 items-start">
       {/* Colonne gauche */}
       <div className="flex flex-col gap-6 w-2/5">
         <KPISection />
-        <PublicPageBox hasPage={hasPage} setShowPageModal={setShowPageModal} />
+        <PublicPageBox 
+          key={pageRefreshKey}
+          hasPage={!!userPage} 
+          setShowPageModal={setShowPageModal} 
+          loading={pageLoading} 
+        />
       </div>
 
       {/* Colonne droite */}
       <AppointmentsSection
-        appointments={appointments}
+        appointments={upcomingAppointments}
         refreshKey={refreshKey}
-        setRefreshKey={setRefreshKey}
         openApptModal={openApptModal}
+        loading={loading}
       />
 
       {/* Modals */}
@@ -52,9 +79,8 @@ export default function KPICards() {
       )}
       {showPageModal && (
         <PublicPageModal
-          hasPage={hasPage}
-          setHasPage={setHasPage}
-          setShowPageModal={setShowPageModal}
+          hasPage={!!userPage}
+          setShowPageModal={handlePageModalClose}
         />
       )}
     </div>
