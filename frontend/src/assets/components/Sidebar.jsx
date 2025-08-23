@@ -4,20 +4,17 @@ import {
   ChevronDown, ChevronRight,
   MessageCircle, Clock, HelpCircle, Settings
 } from 'lucide-react';
-import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 
-export default function Sidebar() {
-  const [openInstagram, setOpenInstagram] = useState(false);
-
+export default function Sidebar({ onInstagramToggle, isInstagramOpen }) {
   return (
-    <div className="flex flex-col w-64 h-screen bg-zinc-300 text-black p-4">
+    <div className="flex flex-col w-64 h-screen bg-gray-200 text-black p-4 relative z-10">
       
       {/* --------- PARTIE HAUT --------- */}
       <div className="flex-1">
         {/* Logo */}
         <div className="flex items-center gap-2 mb-6">
-          <div className="bg-indigo-600 p-2 rounded-lg">
+          <div className="bg-white shadow-md p-2 rounded-lg">
             <LayoutDashboard size={20}/>
           </div>
           <h1 className="font-bold text-lg">InkFlow</h1>
@@ -49,17 +46,10 @@ export default function Sidebar() {
           <SidebarItem
             icon={<Instagram size={18} />}
             label="Instagram"
-            onClick={() => setOpenInstagram(!openInstagram)}
-            rightIcon={openInstagram ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            onClick={onInstagramToggle}
+            rightIcon={isInstagramOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            isActive={isInstagramOpen}
           />
-          {openInstagram && (
-            <nav className="space-y-1 mt-2 ml-6">
-              <SidebarItem to="/messages-ig" icon={<MessageCircle size={14} />} label="Messages reçus" badge="24" />
-              <SidebarItem to="/planifiés" icon={<Clock size={14} />} label="Planifiés" badge="4" />
-              <SidebarItem to="/brouillons" icon={<Image size={14} />} label="Brouillons" badge="7" />
-              <SidebarItem to="/publiés" icon={<BarChart2 size={14} />} label="Publiés" badge="13" />
-            </nav>
-          )}
         </div>
       </div>
 
@@ -68,7 +58,7 @@ export default function Sidebar() {
         <SidebarItem to="/support" icon={<HelpCircle size={18}/>} label="Aide & Support"/>
         <SidebarItem to="/settings" icon={<Settings size={18}/>} label="Settings"/>
 
-        <div className="flex items-center gap-3 mt-4 p-2 hover:bg-zinc-400 rounded-lg cursor-pointer">
+        <div className="flex items-center gap-3 mt-2 p-2 rounded-lg cursor-pointer">
           <img src="https://u.pravatar.cc/40" alt="user" className="w-10 h-10 rounded-full" />
           <div>
             <p className="text-sm font-medium">John Marpaung</p>
@@ -80,13 +70,19 @@ export default function Sidebar() {
   );
 }
 
-// SidebarItem amélioré pour supporter onClick et rightIcon
-function SidebarItem({ to, icon, label, active, badge, onClick, rightIcon }) {
+// SidebarItem amélioré pour supporter onClick, rightIcon et isActive personnalisé
+function SidebarItem({ to, icon, label, badge, onClick, rightIcon, isActive: customIsActive }) {
+  const location = useLocation();
+  const isActive = customIsActive !== undefined ? customIsActive : (to && location.pathname === to);
+  
   const content = (
     <div
-      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer hover:bg-zinc-400 ${
-        active ? "bg-zinc-400" : ""
+      className={`flex items-center justify-between p-2 cursor-pointer hover:bg-zinc-400 ${
+        isActive 
+          ? "bg-zinc-500 text-white rounded-l-lg" 
+          : "rounded-lg"
       }`}
+      style={isActive ? { marginRight: '-1rem' } : {}}
       onClick={onClick}
     >
       <div className="flex items-center gap-3">
@@ -104,7 +100,14 @@ function SidebarItem({ to, icon, label, active, badge, onClick, rightIcon }) {
     </div>
   );
 
-  return to ? <NavLink to={to}>{content}</NavLink> : content;
+  return to ? (
+    <NavLink 
+      to={to}
+      className={({ isActive }) => isActive ? "block" : "block"}
+    >
+      {content}
+    </NavLink>
+  ) : content;
 }
 
 function SectionTitle({ title }) {

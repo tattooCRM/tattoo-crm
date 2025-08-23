@@ -12,9 +12,9 @@ const app = express();
 app.use(express.json());
 
 
-// CORS pour autoriser ton frontend sur Vite (5173)
+// CORS pour autoriser ton frontend sur Vite (5173 et 5174)
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: ['http://localhost:5173', 'http://localhost:5174'],
   credentials: true
 }));
 

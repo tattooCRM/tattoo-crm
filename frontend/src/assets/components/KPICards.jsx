@@ -28,7 +28,7 @@ export default function KPICards() {
   };
 
   return (
-    <div className="p-6 bg-gray-100 rounded-lg flex gap-6 items-start">
+    <div className="p-6 bg-white shadow-md rounded-lg flex gap-6 items-start">
       {/* Colonne gauche */}
       <div className="flex flex-col gap-6 w-2/5">
         <KPISection />

@@ -36,10 +36,6 @@ export default function DashboardTopBar({ breadcrumbs = [], onSearch }) {
 
       {/* Right : Actions */}
       <div className="flex items-center gap-3">
-        {/* Create button */}
-        <button className="flex items-center gap-1 text-sm px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800">
-          <Plus size={16} /> Créer
-        </button>
 
         {/* Notifications */}
         <button className="relative p-2 hover:bg-gray-100 rounded-full">

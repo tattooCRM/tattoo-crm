@@ -1,11 +1,25 @@
 import { Outlet } from "react-router-dom";
+import { useState } from "react";
 import Sidebar from "../assets/components/Sidebar";
-import HeaderDash from "../assets/components/HeaderDash"; // ta petite nav bar
+import HeaderDash from "../assets/components/HeaderDash";
+import InstagramPanel from "../assets/components/InstagramPanel";
 
 export default function DashboardLayout() {
+  const [isInstagramOpen, setIsInstagramOpen] = useState(false);
+
   return (
-    <div className="flex h-screen">
-      <Sidebar />
+    <div className="flex h-screen relative">
+      <Sidebar 
+        onInstagramToggle={() => setIsInstagramOpen(!isInstagramOpen)}
+        isInstagramOpen={isInstagramOpen}
+      />
+      
+      {/* Panneau Instagram */}
+      <InstagramPanel 
+        isOpen={isInstagramOpen} 
+        onClose={() => setIsInstagramOpen(false)} 
+      />
+      
       <div className="flex-1 flex flex-col">
         {/* Navbar en haut */}
         <HeaderDash />
@@ -15,6 +29,14 @@ export default function DashboardLayout() {
           <Outlet />
         </main>
       </div>
+      
+      {/* Overlay pour fermer le panneau */}
+      {isInstagramOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-25 z-40"
+          onClick={() => setIsInstagramOpen(false)}
+        />
+      )}
     </div>
   );
 }
