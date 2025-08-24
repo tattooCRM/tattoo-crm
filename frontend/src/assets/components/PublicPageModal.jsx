@@ -62,9 +62,9 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
   }, [page]);
 
   const tabs = [
-    { id: 'basics', label: 'Informations', icon: User, color: 'blue' },
-    { id: 'design', label: 'Design', icon: Palette, color: 'purple' },
-    { id: 'contact', label: 'Contact', icon: Phone, color: 'green' },
+    { id: 'basics', label: 'Informations', icon: User, color: 'gray' },
+    { id: 'design', label: 'Design', icon: Palette, color: 'gray' },
+    { id: 'contact', label: 'Contact', icon: Phone, color: 'gray' },
     { id: 'advanced', label: 'Avancé', icon: Settings, color: 'gray' },
   ];
 
@@ -84,11 +84,13 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
       case 'basics':
         return formData.username && formData.title && formData.description;
       case 'design':
-        return formData.theme;
+        // Un onglet design est complété si un thème est explicitement choisi ET qu'il y a au moins une image
+        return formData.theme && (formData.headerImage || formData.profilePhoto || formData.gallery.length > 0);
       case 'contact':
         return formData.instagram || formData.phone || formData.email;
       case 'advanced':
-        return true; // Toujours complété car optionnel
+        // Un onglet avancé est complété si au moins un champ est rempli
+        return formData.openingHours || formData.pricing || formData.address || formData.website;
       default:
         return false;
     }
@@ -258,7 +260,7 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b bg-gray-50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center">
               <Palette size={20} className="text-white" />
             </div>
             <div>
@@ -272,7 +274,7 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
             <button
               type="button"
               onClick={() => setShowPreview(!showPreview)}
-              className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
             >
               <Eye size={16} />
               Aperçu
@@ -334,7 +336,7 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
               {activeTab === 'basics' && (
                 <div className="space-y-6">
                   <div className="flex items-center gap-3 mb-6">
-                    <User className="text-blue-600" size={24} />
+                    <User className="text-gray-600" size={24} />
                     <div>
                       <h3 className="text-xl font-bold text-gray-800">Informations de base</h3>
                       <p className="text-gray-600">Les informations essentielles de votre page</p>
@@ -352,14 +354,14 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
                         id="username"
                         value={formData.username}
                         onChange={handleInputChange}
-                        className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
+                        className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-gray-500 focus:outline-none transition-colors"
                         placeholder="johntattoo"
                         required
                       />
                       {formData.username && (
-                        <div className="mt-2 p-2 bg-blue-50 rounded-md flex items-center gap-2">
-                          <ExternalLink size={14} className="text-blue-600" />
-                          <span className="text-sm text-blue-700 font-medium">
+                        <div className="mt-2 p-2 bg-gray-50 rounded-md flex items-center gap-2">
+                          <ExternalLink size={14} className="text-gray-600" />
+                          <span className="text-sm text-gray-700 font-medium">
                             /artist/{generateSlug(formData.username)}
                           </span>
                         </div>
@@ -375,7 +377,7 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
                         id="title"
                         value={formData.title}
                         onChange={handleInputChange}
-                        className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
+                        className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-gray-500 focus:outline-none transition-colors"
                         placeholder="John Doe - Tatoueur professionnel"
                         required
                       />
@@ -391,7 +393,7 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
                       id="description"
                       value={formData.description}
                       onChange={handleInputChange}
-                      className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
+                      className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-gray-500 focus:outline-none transition-colors"
                       rows="4"
                       placeholder="Décrivez votre style, votre expérience, votre approche artistique..."
                       required
@@ -407,7 +409,7 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
               {activeTab === 'design' && (
                 <div className="space-y-6">
                   <div className="flex items-center gap-3 mb-6">
-                    <Palette className="text-purple-600" size={24} />
+                    <Palette className="text-gray-600" size={24} />
                     <div>
                       <h3 className="text-xl font-bold text-gray-800">Design & Thème</h3>
                       <p className="text-gray-600">Personnalisez l'apparence de votre page</p>
@@ -421,7 +423,7 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
                         onClick={() => handleThemeSelect(theme.id)}
                         className={`relative p-6 rounded-xl border-2 cursor-pointer transition-all duration-200 hover:shadow-lg ${
                           selectedTheme === theme.id
-                            ? 'border-purple-500 bg-purple-50 shadow-lg transform scale-105'
+                            ? 'border-gray-500 bg-gray-50 shadow-lg transform scale-105'
                             : 'border-gray-200 bg-white hover:border-gray-300'
                         }`}
                       >
@@ -454,7 +456,7 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
                         </div>
 
                         {selectedTheme === theme.id && (
-                          <div className="absolute top-3 right-3 w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center animate-bounce">
+                          <div className="absolute top-3 right-3 w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center animate-bounce">
                             <span className="text-white font-bold">✓</span>
                           </div>
                         )}
@@ -465,8 +467,8 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
                   {/* Section Upload Images */}
                   <div className="border-t pt-8 mt-8">
                     <div className="flex items-center gap-3 mb-6">
-                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <Eye size={20} className="text-blue-600" />
+                      <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <Eye size={20} className="text-gray-600" />
                       </div>
                       <div>
                         <h4 className="text-lg font-bold text-gray-800">Photos & Images</h4>
@@ -489,7 +491,7 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
                         <label className="block text-sm font-medium mb-3">Photo de profil</label>
                         <div
                           {...getRootPropsProfile()}
-                          className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                          className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-gray-500 hover:bg-gray-50 transition-colors"
                         >
                           <input {...getInputPropsProfile()} />
                           {formData.profilePhoto ? (
@@ -538,7 +540,7 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
                         <label className="block text-sm font-medium mb-3">Galerie (max 8 images)</label>
                         <div
                           {...getRootPropsGallery()}
-                          className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                          className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-gray-500 hover:bg-gray-50 transition-colors"
                         >
                           <input {...getInputPropsGallery()} />
                           {formData.gallery.length > 0 ? (
@@ -594,7 +596,7 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
               {activeTab === 'contact' && (
                 <div className="space-y-6">
                   <div className="flex items-center gap-3 mb-6">
-                    <Phone className="text-green-600" size={24} />
+                    <Phone className="text-gray-600" size={24} />
                     <div>
                       <h3 className="text-xl font-bold text-gray-800">Informations de contact</h3>
                       <p className="text-gray-600">Comment vos clients peuvent vous contacter</p>
@@ -604,7 +606,7 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label htmlFor="instagram" className="block text-sm font-medium mb-2 flex items-center gap-2">
-                        <Instagram size={16} className="text-pink-500" />
+                        <Instagram size={16} className="text-gray-500" />
                         Instagram
                       </label>
                       <input
@@ -613,14 +615,14 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
                         id="instagram"
                         value={formData.instagram}
                         onChange={handleInputChange}
-                        className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-green-500 focus:outline-none transition-colors"
+                        className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-gray-500 focus:outline-none transition-colors"
                         placeholder="mon_compte_insta"
                       />
                     </div>
 
                     <div>
                       <label htmlFor="phone" className="block text-sm font-medium mb-2 flex items-center gap-2">
-                        <Phone size={16} className="text-green-500" />
+                        <Phone size={16} className="text-gray-500" />
                         Téléphone
                       </label>
                       <input
@@ -629,14 +631,14 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
                         id="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
-                        className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-green-500 focus:outline-none transition-colors"
+                        className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-gray-500 focus:outline-none transition-colors"
                         placeholder="+33 X XX XX XX XX"
                       />
                     </div>
 
                     <div>
                       <label htmlFor="email" className="block text-sm font-medium mb-2 flex items-center gap-2">
-                        <Mail size={16} className="text-blue-500" />
+                        <Mail size={16} className="text-gray-500" />
                         Email
                       </label>
                       <input
@@ -645,14 +647,14 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
                         id="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-green-500 focus:outline-none transition-colors"
+                        className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-gray-500 focus:outline-none transition-colors"
                         placeholder="contact@monsite.com"
                       />
                     </div>
 
                     <div>
                       <label htmlFor="website" className="block text-sm font-medium mb-2 flex items-center gap-2">
-                        <Globe size={16} className="text-purple-500" />
+                        <Globe size={16} className="text-gray-500" />
                         Site web
                       </label>
                       <input
@@ -661,7 +663,7 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
                         id="website"
                         value={formData.website}
                         onChange={handleInputChange}
-                        className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-green-500 focus:outline-none transition-colors"
+                        className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-gray-500 focus:outline-none transition-colors"
                         placeholder="https://monsite.com"
                       />
                     </div>
@@ -669,7 +671,7 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
 
                   <div>
                     <label htmlFor="address" className="block text-sm font-medium mb-2 flex items-center gap-2">
-                      <MapPin size={16} className="text-red-500" />
+                      <MapPin size={16} className="text-gray-500" />
                       Adresse du studio
                     </label>
                     <textarea
@@ -677,7 +679,7 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
                       id="address"
                       value={formData.address}
                       onChange={handleInputChange}
-                      className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-green-500 focus:outline-none transition-colors"
+                      className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-gray-500 focus:outline-none transition-colors"
                       rows="2"
                       placeholder="123 Rue de l'Art, 75001 Paris"
                     />
@@ -728,22 +730,22 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
                     </div>
                   </div>
 
-                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-6">
+                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-xl p-6">
                     <div className="flex items-center gap-3 mb-4">
-                      <Zap className="text-purple-600" size={24} />
-                      <h4 className="font-bold text-purple-800">Fonctionnalités premium</h4>
+                      <Zap className="text-gray-600" size={24} />
+                      <h4 className="font-bold text-gray-800">Fonctionnalités premium</h4>
                     </div>
-                    <div className="space-y-3 text-sm text-purple-700">
+                    <div className="space-y-3 text-sm text-gray-700">
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 bg-purple-400 rounded-full"></span>
+                        <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
                         <span>Domaine personnalisé (bientôt)</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 bg-purple-400 rounded-full"></span>
+                        <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
                         <span>Analytics avancées (bientôt)</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 bg-purple-400 rounded-full"></span>
+                        <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
                         <span>Intégration système de réservation (bientôt)</span>
                       </div>
                     </div>
@@ -790,7 +792,7 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
                           setActiveTab(tabs[currentIndex + 1].id);
                         }
                       }}
-                      className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-medium shadow-lg"
+                      className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all font-medium shadow-lg"
                       disabled={loading}
                     >
                       Suivant →
@@ -798,7 +800,7 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
                   ) : (
                     <button
                       type="submit"
-                      className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-bold shadow-lg transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
+                      className="px-8 py-3 bg-gradient-to-r from-gray-600 to-gray-800 text-white rounded-lg hover:from-gray-700 hover:to-gray-900 transition-all font-bold shadow-lg transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
                       disabled={loading}
                     >
                       {loading ? (

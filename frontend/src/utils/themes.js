@@ -34,7 +34,7 @@ export const themes = {
     preview: '/themes/minimal-preview.jpg',
     colors: {
       primary: '#2d3748',
-      secondary: '#4a5568',
+      secondary: '#718096',
       accent: '#3182ce',
       text: '#1a202c',
       textSecondary: '#718096',

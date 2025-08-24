@@ -400,7 +400,7 @@ export default function ArtistPage() {
       >
         <div className="max-w-4xl mx-auto px-6">
           <p className="opacity-75">
-            © 2024 {displayPage.title || displayPage.username} • Créé avec TattooCRM
+            © 2024 {displayPage.title || displayPage.username} • Créé avec InkFlow
           </p>
         </div>
       </footer>

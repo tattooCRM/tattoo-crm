@@ -119,8 +119,8 @@ const HeaderImageUpload = ({
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-          <ImageIcon size={20} className="text-purple-600" />
+        <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+          <ImageIcon size={20} className="text-black" />
         </div>
         <div>
           <h4 className="text-lg font-bold text-gray-800">Image de header</h4>
@@ -135,10 +135,10 @@ const HeaderImageUpload = ({
         {...getRootProps()}
         className={`relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-300 ${
           isDragActive || dropzoneActive
-            ? 'border-purple-400 bg-purple-50 scale-105'
+            ? 'border-gray-400 bg-gray-100 scale-105'
             : validation.errors.length > 0
             ? 'border-red-300 bg-red-50'
-            : 'border-gray-300 bg-gray-50 hover:border-purple-400 hover:bg-purple-50'
+            : 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100'
         }`}
       >
         <input {...getInputProps()} />
@@ -189,8 +189,8 @@ const HeaderImageUpload = ({
         ) : (
           // État vide
           <div className="space-y-4">
-            <div className="w-16 h-16 bg-purple-100 rounded-full mx-auto flex items-center justify-center">
-              <ImageIcon size={32} className="text-purple-600" />
+            <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto flex items-center justify-center">
+              <ImageIcon size={32} className="text-gray-700" />
             </div>
             <div>
               <p className="text-lg font-medium text-gray-700 mb-2">
@@ -245,12 +245,12 @@ const HeaderImageUpload = ({
       )}
 
       {/* Informations sur les exigences */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
         <div className="flex items-center gap-2 mb-3">
-          <Info size={16} className="text-blue-600" />
-          <h5 className="font-medium text-blue-800">Exigences pour l'image de header</h5>
+          <Info size={16} className="text-gray-600" />
+          <h5 className="font-medium text-gray-800">Exigences pour l'image de header</h5>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-700">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
           <div>
             <p><strong>Dimensions:</strong></p>
             <p>• Minimum: {headerRequirements.minWidth}x{headerRequirements.minHeight}px</p>
