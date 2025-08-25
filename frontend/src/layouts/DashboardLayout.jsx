@@ -3,15 +3,18 @@ import { useState } from "react";
 import Sidebar from "../assets/components/Sidebar";
 import HeaderDash from "../assets/components/HeaderDash";
 import InstagramPanel from "../assets/components/InstagramPanel";
+import { NotificationProvider, useNotifications } from "../contexts/NotificationContext";
 
-export default function DashboardLayout() {
+function DashboardContent() {
   const [isInstagramOpen, setIsInstagramOpen] = useState(false);
+  const { agendaBadgeCount } = useNotifications();
 
   return (
     <div className="flex h-screen relative">
       <Sidebar 
         onInstagramToggle={() => setIsInstagramOpen(!isInstagramOpen)}
         isInstagramOpen={isInstagramOpen}
+        agendaBadgeCount={agendaBadgeCount}
       />
       
       {/* Panneau Instagram */}
@@ -38,5 +41,13 @@ export default function DashboardLayout() {
         />
       )}
     </div>
+  );
+}
+
+export default function DashboardLayout() {
+  return (
+    <NotificationProvider>
+      <DashboardContent />
+    </NotificationProvider>
   );
 }

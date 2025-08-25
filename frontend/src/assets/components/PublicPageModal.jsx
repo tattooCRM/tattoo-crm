@@ -5,6 +5,7 @@ import { themeList, getThemeById } from "../../utils/themes";
 import { usePublicPages } from "../../hooks/usePublicPages";
 import { useToast } from "../../hooks/useToast";
 import HeaderImageUpload from "./HeaderImageUpload";
+import ThemeSelector from "./ThemeSelector";
 
 export default function PublicPageModal({ hasPage, setShowPageModal }) {
   const { page, savePage, loading, refreshPage } = usePublicPages();
@@ -416,53 +417,13 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {themeList.map((theme) => (
-                      <div
-                        key={theme.id}
-                        onClick={() => handleThemeSelect(theme.id)}
-                        className={`relative p-6 rounded-xl border-2 cursor-pointer transition-all duration-200 hover:shadow-lg ${
-                          selectedTheme === theme.id
-                            ? 'border-gray-500 bg-gray-50 shadow-lg transform scale-105'
-                            : 'border-gray-200 bg-white hover:border-gray-300'
-                        }`}
-                      >
-                        <div className="flex items-center gap-4 mb-4">
-                          <div
-                            className="w-12 h-12 rounded-full shadow-md"
-                            style={{ 
-                              background: `linear-gradient(45deg, ${theme.colors.primary}, ${theme.colors.accent})` 
-                            }}
-                          />
-                          <div>
-                            <h4 className="font-bold text-lg">{theme.name}</h4>
-                            <p className="text-sm text-gray-600">{theme.description}</p>
-                          </div>
-                        </div>
-                        
-                        <div className="flex gap-2 mb-3">
-                          <div
-                            className="flex-1 h-3 rounded-full"
-                            style={{ backgroundColor: theme.colors.primary }}
-                          />
-                          <div
-                            className="flex-1 h-3 rounded-full"
-                            style={{ backgroundColor: theme.colors.accent }}
-                          />
-                          <div
-                            className="flex-1 h-3 rounded-full"
-                            style={{ backgroundColor: theme.colors.secondary }}
-                          />
-                        </div>
-
-                        {selectedTheme === theme.id && (
-                          <div className="absolute top-3 right-3 w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center animate-bounce">
-                            <span className="text-white font-bold">✓</span>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                  {/* Sélecteur de thèmes */}
+                  <ThemeSelector 
+                    formData={formData} 
+                    setFormData={setFormData}
+                    selectedTheme={selectedTheme}
+                    onThemeSelect={handleThemeSelect}
+                  />
 
                   {/* Section Upload Images */}
                   <div className="border-t pt-8 mt-8">

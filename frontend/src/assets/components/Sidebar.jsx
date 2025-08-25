@@ -2,13 +2,22 @@ import {
   LayoutDashboard, CheckSquare, Calendar, Users, Plus, 
   FileText, Mail, Tag, Search, Image, BarChart2, Instagram,
   ChevronDown, ChevronRight,
-  MessageCircle, Clock, HelpCircle, Settings
+  MessageCircle, Clock, HelpCircle, Settings, LogOut
 } from 'lucide-react';
 import { NavLink, useLocation } from "react-router-dom";
+import { useAuth } from '../../contexts/AuthContext';
+import { useChat } from '../../hooks/useChat';
 
-export default function Sidebar({ onInstagramToggle, isInstagramOpen }) {
+export default function Sidebar({ onInstagramToggle, isInstagramOpen, agendaBadgeCount = 0 }) {
+  const { user, logout } = useAuth();
+  const { unreadCount } = useChat();
+
+  const handleLogout = () => {
+    logout();
+    window.location.href = '/';
+  };
   return (
-    <div className="flex flex-col w-64 h-screen bg-gray-200 text-black p-4 relative z-10">
+    <div className="flex flex-col w-64 bg-gray-200 text-black p-4 relative z-10" style={{ height: '105vh', minHeight: '100vh', maxHeight: 'none' }}>
       
       {/* --------- PARTIE HAUT --------- */}
       <div className="flex-1">
@@ -24,7 +33,7 @@ export default function Sidebar({ onInstagramToggle, isInstagramOpen }) {
         <SectionTitle title="Studio"/>
         <nav className="space-y-2">
           <SidebarItem to="/dashboard" icon={<LayoutDashboard size={18}/>} label="Tableau de bord"/>
-          <SidebarItem to="/agenda" icon={<CheckSquare size={18}/>} label="Agenda" badge="1"/>
+          <SidebarItem to="/agenda" icon={<CheckSquare size={18}/>} label="Agenda" badge={agendaBadgeCount > 0 ? agendaBadgeCount.toString() : undefined}/>
           <SidebarItem to="/clients" icon={<Calendar size={18}/>} label="Clients"/>
           <SidebarItem to="/projets" icon={<Plus size={18}/>} label="Projets"/>
         </nav>
@@ -40,7 +49,13 @@ export default function Sidebar({ onInstagramToggle, isInstagramOpen }) {
         {/* Communication */}
         <SectionTitle title="Communication" />
         <nav className="space-y-2">
-          <SidebarItem to="/messages" icon={<MessageCircle size={18} />} label="Messages"/>
+          <SidebarItem 
+            to="/chat" 
+            icon={<MessageCircle size={18} />} 
+            label="Chat Client"
+            badge={unreadCount > 0 ? unreadCount.toString() : undefined}
+          />
+          <SidebarItem to="/messages" icon={<Mail size={18} />} label="Messages"/>
         </nav>
         <div>
           <SidebarItem
@@ -54,15 +69,32 @@ export default function Sidebar({ onInstagramToggle, isInstagramOpen }) {
       </div>
 
       {/* --------- PARTIE BAS --------- */}
-      <div className="mt-auto pt-4 border-t border-[#1B263B]">
+      <div className="mt-auto pt-4 border-t border-gray-400">
         <SidebarItem to="/support" icon={<HelpCircle size={18}/>} label="Aide & Support"/>
         <SidebarItem to="/settings" icon={<Settings size={18}/>} label="Settings"/>
+        
+        {/* Bouton de déconnexion */}
+        <SidebarItem 
+          icon={<LogOut size={18}/>} 
+          label="Déconnexion" 
+          onClick={handleLogout}
+        />
 
-        <div className="flex items-center gap-3 mt-2 p-2 rounded-lg cursor-pointer">
-          <img src="https://u.pravatar.cc/40" alt="user" className="w-10 h-10 rounded-full" />
+        {/* Profil utilisateur */}
+        <div className="flex items-center gap-3 mt-4 p-2 rounded-lg bg-gray-300">
+          <div className="w-10 h-10 rounded-full bg-gray-500 flex items-center justify-center text-white font-semibold">
+            {user?.nom ? user.nom.charAt(0).toUpperCase() : user?.email?.charAt(0).toUpperCase() || 'U'}
+          </div>
           <div>
-            <p className="text-sm font-medium">John Marpaung</p>
-            <p className="text-xs text-gray-400">John@gmail.com</p>
+            <p className="text-sm font-medium">
+              {user?.nom || user?.prenom || 'Tatoueur'}
+            </p>
+            <p className="text-xs text-gray-600 truncate max-w-[120px]">
+              {user?.email || 'email@example.com'}
+            </p>
+            <p className="text-xs text-gray-500 capitalize">
+              {user?.role === 'tattoo_artist' ? 'Tatoueur' : user?.role || 'Utilisateur'}
+            </p>
           </div>
         </div>
       </div>

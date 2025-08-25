@@ -7,6 +7,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/authRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const publicPageRoutes = require('./routes/publicPageRoutes');
+const chatRoutes = require('./routes/chatRoutes');
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use(cors({
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/public-pages', publicPageRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Connexion MongoDB
 mongoose.connect(process.env.MONGO_URI)

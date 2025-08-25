@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
     startOfWeek,
     addDays,
@@ -8,6 +8,8 @@ import {
 } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Plus } from "lucide-react";
+import { useNotifications } from "../../../contexts/NotificationContext";
+import { useNotificationsSystem } from "../../../contexts/NotificationsContext";
 import {
     DndContext,
     closestCenter,
@@ -22,10 +24,49 @@ import {
 } from '@dnd-kit/core';
 
 export default function Agenda() {
+    const { updateAgendaBadge } = useNotifications();
+    const { 
+        addEventCreatedNotification, 
+        addEventUpdatedNotification, 
+        addEventDeletedNotification, 
+        addEventMovedNotification,
+        addSystemNotification
+    } = useNotificationsSystem();
     const today = new Date();
     const start = startOfWeek(today, { weekStartsOn: 1 });
-    const days = [...Array(7)].map((_, i) => addDays(start, i));
-    const hours = ["08:00", "10:00", "12:00", "15:00", "17:00"];
+    
+    // Mémoriser les jours de la semaine pour éviter les recalculs
+    const days = useMemo(() => [...Array(7)].map((_, i) => addDays(start, i)), [start]);
+    
+    // Heures affichées dans l'agenda (créneaux de 2h en 2h)
+    const displayHours = [
+        "08:00", "10:00", "12:00", 
+        "14:00", "16:00", "18:00"
+    ];
+    
+    // Toutes les heures disponibles dans le formulaire (avec demi-heures)
+    const allHours = [
+        "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", 
+        "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", 
+        "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", 
+        "17:00", "17:30", "18:00"
+    ];
+    
+    // Couleurs pour les événements
+    const eventColors = [
+        "bg-blue-500", "bg-green-500", "bg-purple-500", "bg-pink-500", 
+        "bg-indigo-500", "bg-red-500", "bg-yellow-500", "bg-teal-500",
+        "bg-orange-500", "bg-cyan-500"
+    ];
+    
+    // Fonction pour obtenir une couleur basée sur le titre
+    const getEventColor = (title) => {
+        let hash = 0;
+        for (let i = 0; i < title.length; i++) {
+            hash = title.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return eventColors[Math.abs(hash) % eventColors.length];
+    };
 
     const [events, setEvents] = useState([]);
     const [showModal, setShowModal] = useState(false);
@@ -39,14 +80,16 @@ export default function Agenda() {
         title: "",
         description: "",
         day: format(today, "yyyy-MM-dd"),
-        time: "08:00",
+        time: "09:00",
+        color: "bg-blue-500", // Couleur par défaut
     });
     
     const [editFormData, setEditFormData] = useState({
         title: "",
         description: "",
         day: format(today, "yyyy-MM-dd"),
-        time: "08:00",
+        time: "09:00",
+        color: "bg-blue-500",
     });
 
     // Configuration des sensors pour le drag & drop
@@ -106,6 +149,7 @@ export default function Agenda() {
             description: formData.description,
             date: formData.day,
             time: formData.time,
+            color: formData.color,
         };
 
         console.log("Données envoyées au backend :", newEvent);
@@ -127,17 +171,20 @@ export default function Agenda() {
             })
         .then((savedEvent) => {
             setEvents((prev) => [...prev, savedEvent]);
+            // Ajouter une notification de création
+            addEventCreatedNotification(savedEvent.title, savedEvent.date, savedEvent.time);
             setShowModal(false);
             setFormData({
                 title: "",
                 description: "",
                 day: format(today, "yyyy-MM-dd"),
-                time: "08:00",
+                time: "09:00",
+                color: "bg-blue-500",
             });
         })
         .catch(err => {
             console.error('Détails de l\'erreur:', err);
-            alert(`Erreur lors de la création de l'événement: ${err.message}`);
+            addSystemNotification('Erreur de création', `Impossible de créer l'événement: ${err.message}`, 'error');
         });
     };
 
@@ -149,6 +196,7 @@ export default function Agenda() {
             description: event.description || "",
             day: event.date,
             time: event.time,
+            color: event.color || getEventColor(event.title),
         });
         setShowEditModal(true);
     };
@@ -164,7 +212,8 @@ export default function Agenda() {
             title: editFormData.title,
             description: editFormData.description,
             date: editFormData.day,
-            time: editFormData.time
+            time: editFormData.time,
+            color: editFormData.color,
         };
 
         fetch(`http://localhost:5000/api/events/${editingEvent._id}`, {
@@ -180,13 +229,16 @@ export default function Agenda() {
                 setEvents((prev) =>
                     prev.map(ev => (ev._id === savedEvent._id ? savedEvent : ev))
                 );
+                // Ajouter une notification de modification
+                addEventUpdatedNotification(savedEvent.title, savedEvent.date, savedEvent.time);
                 setShowEditModal(false);
                 setEditingEvent(null);
                 setEditFormData({
                     title: "",
                     description: "",
                     day: format(today, "yyyy-MM-dd"),
-                    time: "08:00",
+                    time: "09:00",
+                    color: "bg-blue-500",
                 });
             })
             .catch(err => {
@@ -212,6 +264,8 @@ export default function Agenda() {
                 return res.json();
             })
             .then(() => {
+                // Ajouter une notification de suppression
+                addEventDeletedNotification(editingEvent.title);
                 setEvents((prev) => prev.filter(ev => ev._id !== editingEvent._id));
                 setShowEditModal(false);
                 setShowDeleteConfirm(false);
@@ -322,6 +376,7 @@ export default function Agenda() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(eventToSave),
         })
+        .then(res => res.json())
         .then((savedEvent) => {
             // Re-synchroniser avec les données du serveur
             setEvents(prevEvents => 
@@ -329,6 +384,8 @@ export default function Agenda() {
                     ev._id === savedEvent._id ? savedEvent : ev
                 )
             );
+            // Ajouter une notification de déplacement avec les données correctes
+            addEventMovedNotification(updatedEvent.title, updatedEvent.date, updatedEvent.time);
         })
         .catch(err => {
             console.error('Erreur sauvegarde:', err);
@@ -343,7 +400,7 @@ export default function Agenda() {
     };
 
     // Composant pour les événements draggables
-    const DraggableEvent = ({ event }) => {
+    const DraggableEvent = ({ event, isHalfHour = false }) => {
         const {
             attributes,
             listeners,
@@ -358,9 +415,11 @@ export default function Agenda() {
             transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
             opacity: isDragging ? 0.8 : 1,
             zIndex: isDragging ? 1000 : 1,
-            boxShadow: isDragging ? '0 10px 25px rgba(0,0,0,0.3)' : 'none',
+            boxShadow: isDragging ? '0 10px 25px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.15)',
             transition: isDragging ? 'none' : 'all 0.2s ease',
         };
+
+        const eventColor = event.color || getEventColor(event.title);
 
         return (
             <div
@@ -369,17 +428,19 @@ export default function Agenda() {
                 {...listeners}
                 {...attributes}
                 onDoubleClick={() => handleEditEvent(event)}
-                className={`absolute top-1 left-1 right-1 bg-blue-500 text-white text-xs p-1 rounded shadow overflow-hidden cursor-grab active:cursor-grabbing select-none ${
+                className={`absolute left-1 right-1 ${eventColor} text-white text-xs p-2 rounded-lg shadow-lg overflow-hidden cursor-grab active:cursor-grabbing select-none transform hover:scale-105 ${
                     isDragging ? 'rotate-2 scale-105' : ''
-                }`}
-                title={`${event.title} - Double-cliquez pour modifier`}
+                } ${isHalfHour ? 'top-8' : 'top-1'}`}
+                title={`${event.title} - ${event.time} - Double-cliquez pour modifier`}
             >
-                <div className="font-semibold">{event.title}</div>
+                <div className="font-semibold truncate">{event.title}</div>
+                <div className="text-[9px] opacity-75 mt-0.5">{event.time}</div>
                 {event.description && (
-                    <div className="text-[10px] opacity-80 truncate">
+                    <div className="text-[10px] opacity-90 truncate mt-1">
                         {event.description}
                     </div>
                 )}
+                <div className="absolute top-1 right-1 w-2 h-2 bg-white bg-opacity-30 rounded-full"></div>
             </div>
         );
     };
@@ -393,14 +454,16 @@ export default function Agenda() {
         return (
             <div
                 ref={setNodeRef}
-                className={`flex-1 border-b last:border-b-0 border-gray-200 relative transition-all duration-200 ${
-                    isOver ? 'bg-blue-50 border-blue-300 border-2 border-dashed' : 'hover:bg-gray-50'
+                className={`flex-1 border-b border-gray-100 last:border-b-0 relative transition-all duration-300 ${
+                    isOver 
+                        ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-300 border-2 border-dashed shadow-inner' 
+                        : 'hover:bg-gray-50/50'
                 }`}
             >
                 {isOver && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full opacity-75">
-                            Déposer ici
+                    <div className="absolute inset-0 flex items-center justify-center animate-pulse">
+                        <div className="bg-blue-500 text-white text-xs px-3 py-1 rounded-full opacity-90 font-medium shadow-lg">
+                            📍 Déposer ici
                         </div>
                     </div>
                 )}
@@ -408,6 +471,22 @@ export default function Agenda() {
             </div>
         );
     };
+
+    // Calculer le nombre d'événements pour la semaine en cours
+    const getWeekEventsCount = useCallback(() => {
+        const weekDates = days.map(day => format(day, "yyyy-MM-dd"));
+        const weekEvents = events.filter(event => weekDates.includes(event.date));
+        return weekEvents.length;
+    }, [days, events]);
+
+    // Mettre à jour le badge de notification quand les événements changent
+    useEffect(() => {
+        // Ne pas mettre à jour le badge pendant le chargement
+        if (loading) return;
+        
+        const weekEventsCount = getWeekEventsCount();
+        updateAgendaBadge(weekEventsCount);
+    }, [loading, getWeekEventsCount, updateAgendaBadge]);
 
     return (
         <>
@@ -422,31 +501,46 @@ export default function Agenda() {
                     collisionDetection={closestCenter}
                     onDragEnd={handleDragEnd}
                 >
-                    <div className="p-4 bg-white rounded-2xl shadow-md w-full max-w-[1600px] mx-auto">
-            <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold flex items-center gap-2">
-                    📅 Semaine en cours
-                </h2>
+                    <div className="p-6 bg-white rounded-2xl shadow-lg w-full max-w-[1600px] mx-auto">
+            <div className="flex items-center justify-between mb-6">
+                <div>
+                    <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
+                        📅 Agenda de la semaine
+                    </h2>
+                    <p className="text-sm text-gray-600 mt-1">
+                        Du {format(days[0], "d MMMM", { locale: fr })} au {format(days[6], "d MMMM yyyy", { locale: fr })}
+                    </p>
+                </div>
                 <button
                     onClick={() => setShowModal(true)}
-                    className="bg-black text-white px-4 py-2 rounded shadow hover:bg-gray-700 transition"
+                    className="bg-black text-white px-6 py-3 rounded-xl shadow-lg hover:bg-gray-800 transition-all transform hover:scale-105 flex items-center gap-2"
                 >
-                    <Plus size={16} label="Ajouter un événement" />
+                    <Plus size={20} />
+                    <span className="font-medium">Nouveau RDV</span>
                 </button>
             </div>
 
-            <div className="grid grid-cols-8 border rounded-lg overflow-hidden h-[calc(100vh-10rem)]">
+            <div className="grid grid-cols-8 border border-gray-200 rounded-xl overflow-hidden shadow-sm" style={{ height: 'calc(100vh - 10rem)' }}>
                 {/* Colonne des heures */}
-                <div className="bg-gray-50 border-r flex flex-col">
-                    <div className="h-12"></div>
-                    {hours.map((hour, idx) => (
-                        <div
-                            key={idx}
-                            className="flex-1 flex items-start justify-end pr-2 text-sm text-gray-500 border-b last:border-b-0 border-gray-200"
-                        >
-                            {hour}
-                        </div>
-                    ))}
+                <div className="bg-gray-50 border-r border-gray-200 flex flex-col">
+                    <div className="h-16 border-b border-gray-200 flex items-center justify-center">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Heures</span>
+                    </div>
+                    {displayHours.map((hour, idx) => {
+                        // Calculer l'heure de fin pour le créneau de 2h
+                        const startHour = parseInt(hour.split(':')[0]);
+                        const endHour = startHour + 2;
+                        const timeRange = `${hour}-${endHour.toString().padStart(2, '0')}:00`;
+                        
+                        return (
+                            <div
+                                key={idx}
+                                className="flex-1 flex items-start justify-end pr-3 pt-1 text-xs font-medium text-gray-600 border-b border-gray-100 last:border-b-0"
+                            >
+                                {timeRange}
+                            </div>
+                        );
+                    })}
                 </div>
                 {/* Colonnes des jours */}
                 {days.map((day, idx) => {
@@ -456,22 +550,30 @@ export default function Agenda() {
                     return (
                         <div
                             key={idx}
-                            className={`flex flex-col border-r last:border-r-0 ${isPast ? "bg-gray-50 text-gray-400" : "bg-white"
-                                }`}
+                            className={`flex flex-col border-r border-gray-200 last:border-r-0 ${
+                                isPast ? "bg-gray-50/50" : "bg-white"
+                            } ${todayCheck ? "bg-blue-50/30" : ""}`}
                         >
                             {/* En-tête jour */}
                             <div
-                                className={`h-12 flex flex-col items-center justify-center border-b ${todayCheck ? "border-blue-500 font-bold" : "border-gray-200"
-                                    }`}
+                                className={`h-16 flex flex-col items-center justify-center border-b border-gray-200 ${
+                                    todayCheck ? "bg-blue-500 text-white" : "bg-white"
+                                } transition-all`}
                             >
-                                <span className="text-sm capitalize">
-                                    {format(day, "EEEE", { locale: fr })}
+                                <span className={`text-xs font-semibold uppercase tracking-wide ${
+                                    todayCheck ? "text-blue-100" : "text-gray-500"
+                                }`}>
+                                    {format(day, "EEE", { locale: fr })}
                                 </span>
-                                <span className="text-lg">{format(day, "d")}</span>
+                                <span className={`text-xl font-bold ${
+                                    todayCheck ? "text-white" : "text-gray-800"
+                                }`}>
+                                    {format(day, "d")}
+                                </span>
                             </div>
 
                             {/* Cases horaires */}
-                            {hours.map((hour, i) => (
+                            {displayHours.map((hour, i) => (
                                 <DroppableTimeSlot
                                     key={i}
                                     date={format(day, "yyyy-MM-dd")}
@@ -479,11 +581,22 @@ export default function Agenda() {
                                 >
                                     {(() => {
                                         const dayStr = format(day, "yyyy-MM-dd");
-                                        const filteredEvents = events.filter(
-                                            (ev) => ev.date === dayStr && ev.time === hour
-                                        );
+                                        // Afficher tous les événements qui tombent dans ce créneau de 2h
+                                        const filteredEvents = events.filter((ev) => {
+                                            if (ev.date !== dayStr) return false;
+                                            
+                                            const eventHour = parseInt(ev.time.split(':')[0]);
+                                            const slotHour = parseInt(hour.split(':')[0]);
+                                            
+                                            // L'événement est dans ce créneau de 2h
+                                            return eventHour >= slotHour && eventHour < (slotHour + 2);
+                                        });
                                         return filteredEvents.map((ev) => (
-                                            <DraggableEvent key={ev._id} event={ev} />
+                                            <DraggableEvent 
+                                                key={ev._id} 
+                                                event={ev} 
+                                                isHalfHour={ev.time.endsWith(':30')}
+                                            />
                                         ));
                                     })()}
                                 </DroppableTimeSlot>
@@ -495,199 +608,261 @@ export default function Agenda() {
 
             {/* Modal pour ajouter un événement */}
             {showModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div
-                        className="bg-white rounded-lg p-6 shadow-lg transform transition-all scale-95 opacity-0 animate-fade-in"
-                        style={{ minWidth: "320px" }}
-                    >
-                        <h3 className="text-lg font-semibold mb-4">Ajouter un événement</h3>
-                        <form onSubmit={handleAddEvent} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium">Titre</label>
-                                <input
-                                    required
-                                    type="text"
-                                    className="w-full border px-3 py-2 rounded"
-                                    value={formData.title}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, title: e.target.value })
-                                    }
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium">Description</label>
-                                <textarea
-                                    rows="3"
-                                    className="w-full border px-3 py-2 rounded"
-                                    value={formData.description}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, description: e.target.value })
-                                    }
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium">Jour</label>
-                                <input
-                                    required
-                                    type="date"
-                                    className="w-full border px-3 py-2 rounded"
-                                    value={formData.day}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, day: e.target.value })
-                                    }
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium">Heure</label>
-                                <select
-                                    className="w-full border px-3 py-2 rounded"
-                                    value={formData.time}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, time: e.target.value })
-                                    }
-                                >
-                                    {hours.map((h) => (
-                                        <option key={h} value={h}>
-                                            {h}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div className="flex justify-end gap-2">
-                                <button
-                                    type="button"
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl transform transition-all scale-95 opacity-0 animate-fade-in w-full max-w-md">
+                        <div className="p-6">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-xl font-bold text-gray-800">Nouvel événement</h3>
+                                <button 
                                     onClick={() => setShowModal(false)}
-                                    className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded hover:bg-gray-200"
+                                    className="text-gray-400 hover:text-gray-600 p-1"
                                 >
-                                    Annuler
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-700"
-                                >
-                                    Ajouter
+                                    ✕
                                 </button>
                             </div>
-                        </form>
+                            
+                            <form onSubmit={handleAddEvent} className="space-y-5">
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Titre</label>
+                                    <input
+                                        required
+                                        type="text"
+                                        className="w-full border border-gray-300 px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                        placeholder="Nom du client ou titre"
+                                        value={formData.title}
+                                        onChange={(e) =>
+                                            setFormData({ ...formData, title: e.target.value })
+                                        }
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                                    <textarea
+                                        rows="3"
+                                        className="w-full border border-gray-300 px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                                        placeholder="Détails du rendez-vous..."
+                                        value={formData.description}
+                                        onChange={(e) =>
+                                            setFormData({ ...formData, description: e.target.value })
+                                        }
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-700 mb-2">Date</label>
+                                        <input
+                                            required
+                                            type="date"
+                                            className="w-full border border-gray-300 px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                            value={formData.day}
+                                            onChange={(e) =>
+                                                setFormData({ ...formData, day: e.target.value })
+                                            }
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-700 mb-2">Heure</label>
+                                        <select
+                                            className="w-full border border-gray-300 px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                            value={formData.time}
+                                            onChange={(e) =>
+                                                setFormData({ ...formData, time: e.target.value })
+                                            }
+                                        >
+                                            {allHours.map((h) => (
+                                                <option key={h} value={h}>
+                                                    {h}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-3">Couleur</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {eventColors.map((color) => (
+                                            <button
+                                                key={color}
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, color })}
+                                                className={`w-8 h-8 rounded-full ${color} ring-2 transition-all ${
+                                                    formData.color === color 
+                                                        ? 'ring-gray-800 scale-110' 
+                                                        : 'ring-gray-300 hover:ring-gray-400'
+                                                }`}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end gap-3 pt-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowModal(false)}
+                                        className="px-6 py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all"
+                                    >
+                                        Annuler
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="px-6 py-3 text-sm font-medium text-white bg-black rounded-lg hover:bg-gray-800 transition-all shadow-lg"
+                                    >
+                                        Créer l'événement
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             )}
 
             {/* Modal pour éditer un événement */}
             {showEditModal && editingEvent && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div
-                        className="bg-white rounded-lg p-6 shadow-lg transform transition-all scale-95 opacity-0 animate-fade-in"
-                        style={{ minWidth: "320px" }}
-                    >
-                        <h3 className="text-lg font-semibold mb-4">Modifier l'événement</h3>
-                        <form onSubmit={handleUpdateEvent} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium">Titre</label>
-                                <input
-                                    required
-                                    type="text"
-                                    className="w-full border px-3 py-2 rounded"
-                                    value={editFormData.title}
-                                    onChange={(e) =>
-                                        setEditFormData({ ...editFormData, title: e.target.value })
-                                    }
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium">Description</label>
-                                <textarea
-                                    rows="3"
-                                    className="w-full border px-3 py-2 rounded"
-                                    value={editFormData.description}
-                                    onChange={(e) =>
-                                        setEditFormData({ ...editFormData, description: e.target.value })
-                                    }
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium">Jour</label>
-                                <input
-                                    required
-                                    type="date"
-                                    className="w-full border px-3 py-2 rounded"
-                                    value={editFormData.day}
-                                    onChange={(e) =>
-                                        setEditFormData({ ...editFormData, day: e.target.value })
-                                    }
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium">Heure</label>
-                                <select
-                                    className="w-full border px-3 py-2 rounded"
-                                    value={editFormData.time}
-                                    onChange={(e) =>
-                                        setEditFormData({ ...editFormData, time: e.target.value })
-                                    }
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl transform transition-all scale-95 opacity-0 animate-fade-in w-full max-w-md">
+                        <div className="p-6">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-xl font-bold text-gray-800">Modifier l'événement</h3>
+                                <button 
+                                    onClick={() => setShowEditModal(false)}
+                                    className="text-gray-400 hover:text-gray-600 p-1"
                                 >
-                                    {hours.map((h) => (
-                                        <option key={h} value={h}>
-                                            {h}
-                                        </option>
-                                    ))}
-                                </select>
+                                    ✕
+                                </button>
                             </div>
+                            
+                            <form onSubmit={handleUpdateEvent} className="space-y-5">
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Titre</label>
+                                    <input
+                                        required
+                                        type="text"
+                                        className="w-full border border-gray-300 px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                        placeholder="Nom du client ou titre"
+                                        value={editFormData.title}
+                                        onChange={(e) =>
+                                            setEditFormData({ ...editFormData, title: e.target.value })
+                                        }
+                                    />
+                                </div>
 
-                            <div className="flex justify-center items-center gap-6">
-                                {!showDeleteConfirm ? (
-                                    <>
-                                        <button
-                                            type="button"
-                                            onClick={handleDeleteEvent}
-                                            className="px-4 py-2 text-sm text-white bg-red-600 rounded hover:bg-red-700"
-                                        >
-                                            Supprimer
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowEditModal(false)}
-                                            className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded hover:bg-gray-200"
-                                        >
-                                            Annuler
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-700"
-                                        >
-                                            Enregistrer
-                                        </button>
-                                    </>
-                                ) : (
-                                    <div className="flex flex-col items-center gap-3">
-                                        <p className="text-sm text-gray-700">Êtes-vous sûr de vouloir supprimer cet événement ?</p>
-                                        <div className="flex gap-3">
-                                            <button
-                                                type="button"
-                                                onClick={cancelDelete}
-                                                className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded hover:bg-gray-200"
-                                            >
-                                                Non, annuler
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={confirmDelete}
-                                                className="px-4 py-2 text-sm text-white bg-red-600 rounded hover:bg-red-700"
-                                            >
-                                                Oui, supprimer
-                                            </button>
-                                        </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                                    <textarea
+                                        rows="3"
+                                        className="w-full border border-gray-300 px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                                        placeholder="Détails du rendez-vous..."
+                                        value={editFormData.description}
+                                        onChange={(e) =>
+                                            setEditFormData({ ...editFormData, description: e.target.value })
+                                        }
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-700 mb-2">Date</label>
+                                        <input
+                                            required
+                                            type="date"
+                                            className="w-full border border-gray-300 px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                            value={editFormData.day}
+                                            onChange={(e) =>
+                                                setEditFormData({ ...editFormData, day: e.target.value })
+                                            }
+                                        />
                                     </div>
-                                )}
-                            </div>
-                        </form>
+
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-700 mb-2">Heure</label>
+                                        <select
+                                            className="w-full border border-gray-300 px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                            value={editFormData.time}
+                                            onChange={(e) =>
+                                                setEditFormData({ ...editFormData, time: e.target.value })
+                                            }
+                                        >
+                                            {allHours.map((h) => (
+                                                <option key={h} value={h}>
+                                                    {h}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-3">Couleur</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {eventColors.map((color) => (
+                                            <button
+                                                key={color}
+                                                type="button"
+                                                onClick={() => setEditFormData({ ...editFormData, color })}
+                                                className={`w-8 h-8 rounded-full ${color} ring-2 transition-all ${
+                                                    editFormData.color === color 
+                                                        ? 'ring-gray-800 scale-110' 
+                                                        : 'ring-gray-300 hover:ring-gray-400'
+                                                }`}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-center items-center gap-3 pt-4">
+                                    {!showDeleteConfirm ? (
+                                        <>
+                                            <button
+                                                type="button"
+                                                onClick={handleDeleteEvent}
+                                                className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-all"
+                                            >
+                                                Supprimer
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowEditModal(false)}
+                                                className="px-6 py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all"
+                                            >
+                                                Annuler
+                                            </button>
+                                            <button
+                                                type="submit"
+                                                className="px-6 py-3 text-sm font-medium text-white bg-black rounded-lg hover:bg-gray-800 transition-all shadow-lg"
+                                            >
+                                                Enregistrer
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <div className="flex flex-col items-center gap-4 p-4 bg-red-50 rounded-xl">
+                                            <p className="text-sm font-medium text-red-800 text-center">
+                                                ⚠️ Êtes-vous sûr de vouloir supprimer cet événement ?
+                                            </p>
+                                            <div className="flex gap-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={cancelDelete}
+                                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
+                                                >
+                                                    Non, annuler
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={confirmDelete}
+                                                    className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-all"
+                                                >
+                                                    Oui, supprimer
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             )}
@@ -697,15 +872,15 @@ export default function Agenda() {
             @keyframes fade-in {
               0% {
                 opacity: 0;
-                transform: scale(0.95);
+                transform: scale(0.95) translateY(-10px);
               }
               100% {
                 opacity: 1;
-                transform: scale(1);
+                transform: scale(1) translateY(0);
               }
             }
             .animate-fade-in {
-              animation: fade-in 0.2s ease-out forwards;
+              animation: fade-in 0.3s ease-out forwards;
             }
             
             /* Styles pour le drag & drop */
@@ -716,11 +891,40 @@ export default function Agenda() {
               cursor: grabbing !important;
             }
             
-            /* Animation pour le survol des zones de drop */
+            /* Animation pour les événements */
+            .event-hover {
+              transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            
+            .event-hover:hover {
+              transform: translateY(-2px) scale(1.02);
+              box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            }
+            
+            /* Animation pour les zones de drop */
             .drop-zone-hover {
-              background-color: rgba(59, 130, 246, 0.1);
+              background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.1));
               border-color: rgba(59, 130, 246, 0.3);
-              transition: all 0.2s ease-in-out;
+              transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            
+            /* Scrollbar personnalisée */
+            .custom-scrollbar::-webkit-scrollbar {
+              width: 6px;
+            }
+            
+            .custom-scrollbar::-webkit-scrollbar-track {
+              background: #f1f5f9;
+              border-radius: 3px;
+            }
+            
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+              background: #cbd5e1;
+              border-radius: 3px;
+            }
+            
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+              background: #94a3b8;
             }
           `}</style>
                     </div>

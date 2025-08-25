@@ -1,5 +1,7 @@
 import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -7,33 +9,33 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
-    e.preventDefault(); // correction ici
+    e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
+      const result = await login(email, password);
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || 'Erreur lors de la connexion');
+      if (result.success) {
+        console.log('Connexion réussie:', result.user);
+        
+        // Rediriger selon le rôle
+        if (result.user.role === 'tattoo_artist' || result.user.role === 'artist' || result.user.role === 'tatoueur') {
+          navigate('/dashboard');
+        } else {
+          navigate('/client'); // Les clients vont vers leur espace dédié
+        }
+      } else {
+        setError(result.error);
       }
-
-      // Stockage du token et des infos user
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-
-      console.log('Connexion réussie:', data);
-      window.location.href = "/dashboard";
     } catch (err) {
-      setError(err.message);
+      setError('Une erreur inattendue s\'est produite');
+      console.error('Erreur login:', err);
     } finally {
       setLoading(false);
     }

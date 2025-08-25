@@ -1,20 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { Instagram, ExternalLink, Mail, Phone, MapPin, Clock, Star } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Instagram, ExternalLink, Mail, Phone, MapPin, Clock, Star, MessageCircle } from 'lucide-react';
 import { usePublicPages } from '../../hooks/usePublicPages';
+import { useTattooArtists } from '../../hooks/useTattooArtists';
+import { useAuth } from '../../contexts/AuthContext';
 import { getThemeById } from '../../utils/themes';
+import ProjectContactModal from '../components/ProjectContactModal';
 
 export default function ArtistPage() {
   const { slug } = useParams();
-  const { fetchPageBySlug } = usePublicPages();
+  const navigate = useNavigate();
+  const { fetchPageBySlug } = usePublicPages({ autoLoadUserPage: false });
+  const { getTattooArtistBySlug, startConversationWith } = useTattooArtists();
+  const { user, isAuthenticated } = useAuth();
   const [page, setPage] = useState(null);
+  const [tattooArtist, setTattooArtist] = useState(null);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [showProjectModal, setShowProjectModal] = useState(false);
 
   useEffect(() => {
     const loadPage = async () => {
       try {
         const data = await fetchPageBySlug(slug);
         setPage(data);
+        
+        // Essayer de récupérer aussi les infos du tatoueur depuis l'API chat
+        try {
+          console.log('Récupération tatoueur pour slug:', slug);
+          const artistData = await getTattooArtistBySlug(slug);
+          console.log('Tatoueur trouvé:', artistData);
+          setTattooArtist(artistData);
+        } catch (err) {
+          // Pas grave si on ne trouve pas le tatoueur dans l'API chat
+          console.log('Tatoueur non trouvé dans l\'API chat:', err.message);
+        }
       } catch (err) {
         setError(err.message);
       }
@@ -23,7 +43,62 @@ export default function ArtistPage() {
     if (slug) {
       loadPage();
     }
-  }, [slug, fetchPageBySlug]);
+  }, [slug, fetchPageBySlug, getTattooArtistBySlug]);
+
+  // Fonction pour ouvrir le formulaire projet
+  const handleContactArtist = () => {
+    if (!isAuthenticated) {
+      // Rediriger vers la page de connexion
+      navigate('/login', { state: { from: `/artist/${slug}` } });
+      return;
+    }
+
+    if (!user || user.role !== 'client') {
+      alert(`Seuls les clients peuvent contacter les tatoueurs. Votre rôle actuel: ${user?.role}`);
+      return;
+    }
+
+    setShowProjectModal(true);
+  };
+
+  // Fonction pour soumettre le projet et créer la conversation
+  const handleSubmitProject = async (projectData) => {
+    setLoading(true);
+    
+    try {
+      // Déterminer l'artiste à contacter
+      let artistToContact = tattooArtist;
+      
+      if (!artistToContact) {
+        // Fallback: utiliser l'ID du tatoueur Alex pour les tests
+        artistToContact = {
+          _id: '68ab473159f3058802ca0521',
+          name: 'Alex Tattoo Artist'
+        };
+        console.warn('Utilisation du tatoueur fallback pour les tests');
+      }
+
+      // Créer la conversation avec les données du projet
+      const conversation = await startConversationWith(artistToContact._id, 'autre', projectData);
+      console.log('Conversation créée:', conversation);
+
+      // Fermer la modal
+      setShowProjectModal(false);
+      
+      // Rediriger vers la page de chat
+      navigate('/chat', { 
+        state: { 
+          conversationId: conversation._id,
+          shouldReload: true
+        } 
+      });
+    } catch (err) {
+      console.error('Erreur lors de la création de la conversation:', err);
+      alert('Erreur lors de l\'envoi de votre demande: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Affichage immédiat avec contenu par défaut pendant le chargement
   const displayPage = page || {
@@ -155,9 +230,25 @@ export default function ArtistPage() {
                 }}
               >
                 <Mail size={20} />
-                Contact
+                Email
               </a>
             )}
+
+            {/* Bouton Demander un devis */}
+            <button
+              onClick={handleContactArtist}
+              disabled={loading}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg hover:opacity-90 transition-all shadow-lg ${
+                loading ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              style={{ 
+                backgroundColor: theme.colors.primary,
+                color: '#ffffff' // Force le texte en blanc
+              }}
+            >
+              <MessageCircle size={20} />
+              Demander un devis
+            </button>
           </div>
         </div>
       </div>
@@ -404,6 +495,16 @@ export default function ArtistPage() {
           </p>
         </div>
       </footer>
+
+      {/* Modal de demande de projet */}
+      <ProjectContactModal
+        isOpen={showProjectModal}
+        onClose={() => setShowProjectModal(false)}
+        onSubmit={handleSubmitProject}
+        artistName={displayPage.title || displayPage.username}
+        artistSpecialty={page?.specialty || 'Tatouage personnalisé'}
+        loading={loading}
+      />
     </div>
   );
 }

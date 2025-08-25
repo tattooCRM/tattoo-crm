@@ -4,6 +4,7 @@ const PublicPage = require('../models/PublicPage');
 const User = require('../models/User');
 const { uploadPublicPageImages, handleUploadErrors, getPublicUrl, deleteFile } = require('../middleware/upload');
 const { validateImageDimensions, IMAGE_REQUIREMENTS } = require('../utils/imageValidator');
+const chatController = require('../controllers/chatController');
 const path = require('path');
 
 // GET /api/public-pages/image-requirements - Obtenir les exigences pour les images
@@ -61,6 +62,9 @@ router.get('/slug/:slug', async (req, res) => {
         res.status(500).json({ message: 'Erreur serveur', error: error.message });
     }
 });
+
+// Route publique pour récupérer un tatoueur par son slug (sans authentification)
+router.get('/tattoo-artist/:slug', chatController.getTattooArtistBySlug);
 
 // POST /api/public-pages - Créer une nouvelle page (avec upload d'images)
 router.post('/', uploadPublicPageImages, handleUploadErrors, async (req, res) => {

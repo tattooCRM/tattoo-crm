@@ -1,18 +1,40 @@
-import { ChevronRight, Search, Bell, Plus, Settings, User, LogOut, UserCircle } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { ChevronRight, Search, Bell, Plus, Settings, User, LogOut, UserCircle, X, Trash2 } from "lucide-react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { useNotificationsSystem } from "../../contexts/NotificationsContext";
+import { useAuth } from "../../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function DashboardTopBar({ breadcrumbs = [], onSearch }) {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showNotificationsMenu, setShowNotificationsMenu] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [notificationFilter, setNotificationFilter] = useState('all');
   const profileMenuRef = useRef(null);
+  const notificationsMenuRef = useRef(null);
+  
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
-  // Fermer le menu quand on clique à l'extérieur
+  // Utiliser le système de notifications
+  const { 
+    notifications, 
+    unreadCount, 
+    markAsRead, 
+    deleteNotification, 
+    markAllAsRead, 
+    clearAll 
+  } = useNotificationsSystem();
+
+  // Fermer les menus quand on clique à l'extérieur
   useEffect(() => {
     function handleClickOutside(event) {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
         setShowProfileMenu(false);
+      }
+      if (notificationsMenuRef.current && !notificationsMenuRef.current.contains(event.target)) {
+        setShowNotificationsMenu(false);
       }
     }
 
@@ -36,6 +58,45 @@ export default function DashboardTopBar({ breadcrumbs = [], onSearch }) {
     setShowLogoutModal(true);
     setShowProfileMenu(false);
   };
+
+  const confirmLogout = () => {
+    logout();
+    navigate('/');
+    setShowLogoutModal(false);
+  };
+
+  const handleNotificationClick = (notificationId) => {
+    markAsRead(notificationId);
+  };
+
+  const handleDeleteNotification = (notificationId, event) => {
+    event.stopPropagation();
+    deleteNotification(notificationId);
+  };
+
+  // Filtrer les notifications selon le type sélectionné
+  const filteredNotifications = useMemo(() => {
+    if (notificationFilter === 'all') return notifications;
+    return notifications.filter(notification => {
+      if (notificationFilter === 'events') {
+        return notification.type?.startsWith('event_');
+      }
+      if (notificationFilter === 'clients') {
+        return notification.type?.startsWith('client_');
+      }
+      if (notificationFilter === 'system') {
+        return notification.type?.startsWith('system_');
+      }
+      return true;
+    });
+  }, [notifications, notificationFilter]);
+
+  const filterOptions = [
+    { value: 'all', label: 'Toutes', icon: '📋' },
+    { value: 'events', label: 'Événements', icon: '📅' },
+    { value: 'clients', label: 'Clients', icon: '👤' },
+    { value: 'system', label: 'Système', icon: '⚙️' },
+  ];
 
   return (
     <header className="flex items-center justify-between bg-white border-b px-4 py-2">
@@ -74,10 +135,132 @@ export default function DashboardTopBar({ breadcrumbs = [], onSearch }) {
       <div className="flex items-center gap-3">
 
         {/* Notifications */}
-        <button className="relative p-2 hover:bg-gray-100 rounded-full">
-          <Bell size={18} />
-          <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
-        </button>
+        <div className="relative" ref={notificationsMenuRef}>
+          <button 
+            className="relative p-2 hover:bg-gray-100 rounded-full transition-colors"
+            onClick={() => setShowNotificationsMenu(!showNotificationsMenu)}
+          >
+            <Bell size={18} />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+
+          {/* Notifications Dropdown */}
+          {showNotificationsMenu && (
+            <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+              {/* Header */}
+              <div className="px-4 py-3 border-b border-gray-100">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-gray-800">Notifications</h3>
+                  <div className="flex items-center gap-2">
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={markAllAsRead}
+                        className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                      >
+                        Tout marquer lu
+                      </button>
+                    )}
+                    <button
+                      onClick={clearAll}
+                      className="text-xs text-gray-500 hover:text-gray-700"
+                    >
+                      Tout effacer
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Filtres */}
+                <div className="flex gap-1">
+                  {filterOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => setNotificationFilter(option.value)}
+                      className={`px-2 py-1 text-xs rounded-md flex items-center gap-1 transition-colors ${
+                        notificationFilter === option.value
+                          ? 'bg-gray-900 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <span>{option.icon}</span>
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Notifications List */}
+              <div className="max-h-96 overflow-y-auto">
+                {filteredNotifications.length === 0 ? (
+                  <div className="py-8 text-center">
+                    <Bell size={24} className="mx-auto text-gray-300 mb-2" />
+                    <p className="text-gray-500 text-sm">
+                      {notificationFilter === 'all' ? 'Aucune notification' : `Aucune notification de type "${filterOptions.find(f => f.value === notificationFilter)?.label}"`}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="py-2">
+                    {filteredNotifications.map((notification) => (
+                      <div
+                        key={notification.id}
+                        className={`group relative px-4 py-3 hover:bg-gray-50 cursor-pointer border-l-4 transition-all ${
+                          notification.isRead 
+                            ? 'border-l-transparent' 
+                            : 'border-l-blue-500 bg-blue-50/50'
+                        }`}
+                        onClick={() => handleNotificationClick(notification.id)}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="text-lg">{notification.icon}</div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <p className={`text-sm font-medium ${
+                                  notification.isRead ? 'text-gray-700' : 'text-gray-900'
+                                }`}>
+                                  {notification.title}
+                                </p>
+                                <p className={`text-xs mt-1 ${
+                                  notification.isRead ? 'text-gray-500' : 'text-gray-600'
+                                }`}>
+                                  {notification.message}
+                                </p>
+                                <p className="text-xs text-gray-400 mt-1">
+                                  Il y a {notification.time}
+                                </p>
+                              </div>
+                              <button
+                                onClick={(e) => handleDeleteNotification(notification.id, e)}
+                                className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded-full transition-all ml-2"
+                              >
+                                <X size={12} className="text-red-500" />
+                              </button>
+                            </div>
+                            {!notification.isRead && (
+                              <div className="w-2 h-2 bg-blue-500 rounded-full absolute top-4 right-4"></div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              {notifications.length > 0 && (
+                <div className="px-4 py-3 border-t border-gray-100">
+                  <button className="w-full text-center text-sm text-blue-600 hover:text-blue-800 font-medium">
+                    Voir toutes les notifications
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Profile avatar */}
         <div className="relative" ref={profileMenuRef}>
@@ -297,7 +480,10 @@ export default function DashboardTopBar({ breadcrumbs = [], onSearch }) {
                 >
                   Annuler
                 </button>
-                <button className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors">
+                <button 
+                  onClick={confirmLogout}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                >
                   Se déconnecter
                 </button>
               </div>

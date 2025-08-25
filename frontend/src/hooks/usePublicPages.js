@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 
 // Hook pour gérer les pages publiques
-export function usePublicPages() {
+export function usePublicPages(options = {}) {
+    const { autoLoadUserPage = true } = options;
     const [page, setPage] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -237,10 +238,10 @@ export function usePublicPages() {
 
     useEffect(() => {
         const userId = getUserId();
-        if (userId) {
+        if (userId && autoLoadUserPage) {
             fetchUserPage();
         }
-    }, []);
+    }, [autoLoadUserPage]);
 
     return {
         page,
