@@ -37,7 +37,9 @@ const authFetch = async (url, options = {}) => {
 export const chatAPI = {
   // Récupérer toutes les conversations de l'utilisateur
   getConversations: async () => {
-    return authFetch(`${API_URL}/chat/conversations`);
+    const response = await authFetch(`${API_URL}/chat/conversations`);
+    // Le backend retourne { conversations: [...] } donc on extrait le tableau
+    return response.conversations || response;
   },
 
   // Créer une nouvelle conversation
@@ -72,7 +74,9 @@ export const chatAPI = {
 
   // Récupérer les messages d'une conversation
   getMessages: async (conversationId) => {
-    return authFetch(`${API_URL}/chat/conversations/${conversationId}/messages`);
+    const response = await authFetch(`${API_URL}/chat/conversations/${conversationId}/messages`);
+    // Le backend retourne { messages: [...] } donc on extrait le tableau
+    return response.messages || response;
   },
 
   // Envoyer un message
@@ -104,8 +108,8 @@ export const chatAPI = {
   getTattooArtistBySlug: async (slug) => {
     const response = await fetch(`${API_URL}/public-pages/tattoo-artist/${slug}`);
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Erreur serveur');
+      const error = await response.json().catch(() => ({ message: 'Erreur serveur' }));
+      throw new Error(error.message || 'Tatoueur introuvable');
     }
     return response.json();
   }

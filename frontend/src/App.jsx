@@ -18,6 +18,7 @@ import ChatRouter from './assets/pages/ChatRouter';
 import { TestPage } from './pages/TestPage';
 import TestLogout from './pages/TestLogout';
 import ChatDebug from './pages/ChatDebug';
+import TestContactTattooArtist from './pages/TestContactTattooArtist';
 
 // Module Dashboard
 import Agenda from './assets/pages/dashboard/Agenda';
@@ -67,6 +68,9 @@ function App() {
 
             {/* Page de debug chat */}
             <Route path="/chat-debug" element={<ChatDebug />} />
+
+            {/* Page de test contact tatoueur */}
+            <Route path="/test-contact-tattoo" element={<TestContactTattooArtist />} />
 
             {/* Espace client (utilisateurs connectés non-tatoueurs) */}
             <Route path="/client" element={

@@ -379,8 +379,10 @@ const ProjectContactModal = ({ isOpen, onClose, onSubmit, artistName, artistSpec
               <select
                 value={formData.budget}
                 onChange={(e) => handleInputChange('budget', e.target.value)}
-                className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-              >
+                className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-gray-900 bg-white text-gray-900 bg-white ${
+                  errors.style ? 'border-red-300' : 'border-gray-200'
+                }`}
+                >
                 <option value="">Préférez ne pas préciser</option>
                 {budgetRanges.map((range) => (
                   <option key={range.value} value={range.value}>
@@ -399,8 +401,9 @@ const ProjectContactModal = ({ isOpen, onClose, onSubmit, artistName, artistSpec
               <select
                 value={formData.availability}
                 onChange={(e) => handleInputChange('availability', e.target.value)}
-                className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-              >
+                className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-gray-900 bg-white text-gray-900 bg-white ${
+                  errors.style ? 'border-red-300' : 'border-gray-200'
+                }`}>
                 <option value="">Sélectionnez vos créneaux</option>
                 {availabilityOptions.map((option) => (
                   <option key={option.value} value={option.value}>

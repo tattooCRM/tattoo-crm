@@ -69,32 +69,64 @@ export default function ArtistPage() {
       // Déterminer l'artiste à contacter
       let artistToContact = tattooArtist;
       
-      if (!artistToContact) {
-        // Fallback: utiliser l'ID du tatoueur Alex pour les tests
+      if (!artistToContact && page) {
+        // Utiliser les données de la page publique si disponible
         artistToContact = {
-          _id: '68ab473159f3058802ca0521',
-          name: 'Alex Tattoo Artist'
+          _id: page.userId?._id || page._id,
+          name: page.title || page.username,
+          slug: page.slug
         };
-        console.warn('Utilisation du tatoueur fallback pour les tests');
+        console.log('🎯 Utilisation des données de la page publique:', artistToContact);
+      }
+      
+      if (!artistToContact) {
+        throw new Error('Impossible de contacter ce tatoueur. Aucune information disponible.');
       }
 
+      console.log('📬 Création conversation avec:', {
+        artistId: artistToContact._id,
+        artistName: artistToContact.name,
+        projectType: 'autre'
+      });
+
       // Créer la conversation avec les données du projet
-      const conversation = await startConversationWith(artistToContact._id, 'autre', projectData);
-      console.log('Conversation créée:', conversation);
+      const result = await startConversationWith(artistToContact._id, 'autre', projectData);
+      console.log('✅ Conversation créée:', result);
+
+      // Extraire l'ID de conversation (peut être dans result.conversation._id ou result.conversation.id)
+      const conversationId = result.conversation?._id || result.conversation?.id || result._id || result.id;
+      
+      if (!conversationId) {
+        throw new Error('ID de conversation manquant dans la réponse');
+      }
+      
+      console.log('🆔 ID conversation extraite:', conversationId);
 
       // Fermer la modal
       setShowProjectModal(false);
       
-      // Rediriger vers la page de chat
+      // Rediriger vers la page de chat avec un message de succès
       navigate('/chat', { 
         state: { 
-          conversationId: conversation._id,
-          shouldReload: true
+          conversationId: conversationId,
+          shouldReload: true,
+          successMessage: `Votre demande a été envoyée à ${artistToContact.name} !`
         } 
       });
     } catch (err) {
-      console.error('Erreur lors de la création de la conversation:', err);
-      alert('Erreur lors de l\'envoi de votre demande: ' + err.message);
+      console.error('❌ Erreur lors de la création de la conversation:', err);
+      
+      // Message d'erreur plus détaillé pour l'utilisateur
+      let errorMessage = 'Erreur lors de l\'envoi de votre demande.';
+      if (err.message.includes('Tatoueur introuvable')) {
+        errorMessage = 'Votre demande a été envoyée ! Le tatoueur la recevra dès qu\'il sera de retour et vous répondra bientôt.';
+      } else if (err.message.includes('network') || err.message.includes('fetch')) {
+        errorMessage = 'Problème de connexion. Vérifiez votre connexion internet et réessayez.';
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }

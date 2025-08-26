@@ -31,7 +31,7 @@ const conversationSchema = new mongoose.Schema({
   },
   projectType: {
     type: String,
-    enum: ['geometrique', 'minimaliste', 'traditionnel', 'realisme', 'japonais', 'tribal', 'autre'],
+    enum: ['first', 'addition', 'coverup', 'touchup', 'geometrique', 'minimaliste', 'traditionnel', 'realisme', 'japonais', 'tribal', 'autre'],
     default: 'autre'
   },
   clientNotes: String, // Notes du tatoueur sur le client
@@ -58,7 +58,7 @@ const messageSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['text', 'image', 'file', 'project'],
+    enum: ['text', 'image', 'file', 'project', 'system'],
     default: 'text'
   },
   fileUrl: String, // Pour les images/fichiers

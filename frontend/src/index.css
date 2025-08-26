@@ -28,3 +28,31 @@
     }
   }
 }
+
+/* Styles pour les messages projet HTML */
+.project-message {
+  width: 100%;
+  max-width: none;
+}
+
+.project-message div {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Assurer la compatibilité avec les propriétés CSS modernes */
+.project-message * {
+  box-sizing: border-box;
+}
+
+/* Support des dégradés dans le texte pour Safari */
+.project-message [style*="background-clip: text"] {
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Support du backdrop-filter pour tous les navigateurs */
+.project-message [style*="backdrop-filter"] {
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}

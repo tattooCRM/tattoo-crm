@@ -23,51 +23,15 @@ export default function ChatPage() {
     loadMessages
   } = useChat();
 
-  // Gérer la conversation à ouvrir depuis la navigation
-  useEffect(() => {
-    if (location.state?.conversationId) {
-      console.log('Conversation à ouvrir:', location.state.conversationId);
-      setPendingConversationId(location.state.conversationId);
-      
-      // Nettoyer le state de navigation pour éviter les boucles
-      navigate('/chat', { replace: true });
-      
-      // Si on doit recharger ou si les conversations ne sont pas encore chargées
-      if (location.state?.shouldReload || conversations.length === 0) {
-        console.log('Rechargement des conversations...');
-        loadConversations();
-      }
-    }
-  }, [location.state, navigate, loadConversations]);
-
-  // Ouvrir la conversation une fois qu'elle est disponible
-  useEffect(() => {
-    if (pendingConversationId && conversations.length > 0) {
-      const targetConversation = conversations.find(conv => conv.id === pendingConversationId);
-      console.log('Recherche conversation:', pendingConversationId);
-      console.log('Conversations disponibles:', conversations.map(c => ({ id: c.id, name: c.artistName || c.clientName })));
-      console.log('Conversation trouvée:', targetConversation);
-      
-      if (targetConversation) {
-        setSelectedChat(targetConversation);
-        console.log('Conversation sélectionnée automatiquement');
-        
-        // Charger les messages de démonstration pour cette conversation
-        handleSelectChat(targetConversation);
-        
-        // Réinitialiser l'ID en attente
-        setPendingConversationId(null);
-      }
-    }
-  }, [conversations, pendingConversationId]);
-
-  // Utilisation du hook useChat pour les données réelles
-  
+  // Définir handleSelectChat AVANT les useEffect qui l'utilisent
   const handleSelectChat = async (chat) => {
+    console.log('🎯 Sélection conversation:', chat.id, chat.artistName || chat.clientName);
     setSelectedChat(chat);
     try {
       // Charger les messages réels de la conversation
+      console.log('📨 Chargement des messages pour conversation:', chat.id);
       const realMessages = await loadMessages(chat.id);
+      console.log('✅ Messages chargés:', realMessages.length, 'messages');
       
       // Formatter les messages pour l'affichage
       const formattedMessages = realMessages.map(msg => {
@@ -92,27 +56,96 @@ export default function ChatPage() {
       });
       
       setMessages(formattedMessages);
+      console.log('💬 Messages formatés et affichés:', formattedMessages.length);
       
       // Marquer comme lu
       if (chat.unreadCount > 0) {
+        console.log('📖 Marquage conversation comme lue');
         await markConversationAsRead(chat.id);
       }
     } catch (error) {
-      console.error('Erreur lors de la sélection du chat:', error);
+      console.error('❌ Erreur lors de la sélection du chat:', error);
+      console.error('Détails de l\'erreur:', {
+        chatId: chat.id,
+        chatName: chat.artistName || chat.clientName,
+        errorMessage: error.message,
+        stack: error.stack
+      });
       
-      // En cas d'erreur, afficher un message par défaut
+      // En cas d'erreur, afficher un message par défaut avec plus de détails
       setMessages([
         {
           id: 'error',
           senderId: 'system',
           senderName: 'Système',
-          content: 'Erreur lors du chargement des messages. Veuillez réessayer.',
+          content: `❌ Erreur lors du chargement des messages: ${error.message}. Veuillez réessayer dans quelques instants.`,
           timestamp: new Date(),
           type: 'text'
         }
       ]);
     }
   };
+
+  // Gérer la conversation à ouvrir depuis la navigation
+  useEffect(() => {
+    if (location.state?.conversationId) {
+      console.log('🎯 Conversation à ouvrir:', location.state.conversationId);
+      setPendingConversationId(location.state.conversationId);
+      
+      // Nettoyer le state de navigation pour éviter les boucles
+      navigate('/chat', { replace: true });
+      
+      // Toujours recharger les conversations pour être sûr d'avoir la nouvelle
+      console.log('🔄 Rechargement forcé des conversations...');
+      loadConversations();
+    }
+  }, [location.state, navigate, loadConversations]);
+
+  // Ouvrir la conversation une fois qu'elle est disponible
+  useEffect(() => {
+    if (pendingConversationId && conversations.length > 0) {
+      console.log('🎯 Tentative d\'ouverture automatique de la conversation:', pendingConversationId);
+      console.log('📋 Conversations disponibles:', conversations.map(c => ({ 
+        id: c.id, 
+        name: c.otherParticipantName || c.artistName || c.clientName 
+      })));
+      
+      const targetConversation = conversations.find(conv => 
+        conv.id === pendingConversationId || conv.id?.toString() === pendingConversationId?.toString()
+      );
+      
+      if (targetConversation) {
+        console.log('✅ Conversation trouvée et sélectionnée:', targetConversation);
+        setSelectedChat(targetConversation);
+        
+        // Charger et afficher les messages immédiatement
+        handleSelectChat(targetConversation);
+        
+        // Réinitialiser l'ID en attente
+        setPendingConversationId(null);
+        
+        // Afficher un message de succès si fourni
+        if (location.state?.successMessage) {
+          console.log('✅ Message de succès:', location.state.successMessage);
+          // Vous pouvez ajouter ici une notification toast si vous en avez une
+        }
+      } else {
+        console.log('⚠️ Conversation non trouvée, nouvelle tentative dans 2s...');
+        console.log('🔍 ID recherché:', pendingConversationId);
+        console.log('📝 IDs disponibles:', conversations.map(c => c.id));
+        
+        // Si la conversation n'est pas encore disponible, réessayer dans 2 secondes
+        const retryTimer = setTimeout(() => {
+          console.log('🔄 Nouvelle tentative de recherche de conversation...');
+          loadConversations();
+        }, 2000);
+        
+        return () => clearTimeout(retryTimer);
+      }
+    }
+  }, [conversations, pendingConversationId, loadConversations, location.state, handleSelectChat]);
+
+  // Utilisation du hook useChat pour les données réelles
 
   const handleBackToList = () => {
     setSelectedChat(null);
@@ -345,14 +378,11 @@ export default function ChatPage() {
                   selectedChat?.id === conv.id ? 'bg-blue-50 border-blue-200' : ''
                 }`}
               >
-                {/* Avatar avec indicateur en ligne */}
+                {/* Avatar */}
                 <div className="relative">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold">
                     {conv.otherParticipantAvatar || conv.artistAvatar || conv.clientAvatar}
                   </div>
-                  {conv.isOnline && (
-                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
-                  )}
                 </div>
 
                 {/* Infos conversation */}
@@ -386,13 +416,7 @@ export default function ChatPage() {
             )}
           </div>
 
-          {/* Info en bas */}
-          <div className="p-4 border-t bg-gray-50">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span>{conversations.filter(c => c.isOnline).length} artistes en ligne</span>
-            </div>
-          </div>
+          {/* Info en bas - supprimé le status en ligne selon votre demande */}
         </div>
 
         {/* Interface de chat */}
@@ -419,9 +443,8 @@ export default function ChatPage() {
                     <h3 className="font-semibold text-gray-900">
                       {selectedChat.otherParticipantName || selectedChat.artistName || selectedChat.clientName}
                     </h3>
-                    <p className={`text-sm flex items-center gap-1 ${selectedChat.isOnline ? 'text-green-500' : 'text-gray-500'}`}>
-                      <span className={`w-2 h-2 rounded-full ${selectedChat.isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></span>
-                      {selectedChat.isOnline ? 'En ligne' : 'Hors ligne'}
+                    <p className="text-sm text-gray-500">
+                      {user?.role === 'client' ? `Spécialité: ${selectedChat.specialty}` : 'Client'}
                     </p>
                   </div>
                 </div>
@@ -469,26 +492,46 @@ export default function ChatPage() {
                   // Messages texte normaux
                   return (
                     <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${
-                        isOwn 
-                          ? 'bg-black text-white rounded-br-sm' 
-                          : 'bg-white text-gray-900 rounded-bl-sm shadow-sm border'
+                      <div className={`${
+                        isProject 
+                          ? 'max-w-full' // Messages projet prennent plus de place
+                          : 'max-w-xs lg:max-w-md'
+                      } ${
+                        isProject
+                          ? '' // Pas de style par défaut pour les messages projet
+                          : `px-4 py-3 rounded-2xl ${
+                              isOwn 
+                                ? 'bg-black text-white rounded-br-sm' 
+                                : 'bg-white text-gray-900 rounded-bl-sm shadow-sm border'
+                            }`
                       }`}>
-                        {!isOwn && (
+                        {!isOwn && !isProject && (
                           <p className="text-xs font-semibold mb-2 text-gray-600">
                             {msg.senderName}
                           </p>
                         )}
                         
-                        <p className="text-sm leading-relaxed">
-                          {typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content)}
-                        </p>
+                        {isProject && typeof msg.content === 'string' && msg.content.includes('<div') ? (
+                          // Rendu HTML pour les messages projet avec CSS
+                          <div 
+                            dangerouslySetInnerHTML={{ __html: msg.content }}
+                            className="project-message"
+                          />
+                        ) : (
+                          <div>
+                            <p className={isProject ? "text-sm leading-relaxed whitespace-pre-wrap" : "text-sm leading-relaxed"}>
+                              {typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content)}
+                            </p>
+                          </div>
+                        )}
                         
-                        <p className={`text-xs mt-2 ${
-                          isOwn ? 'text-gray-300' : 'text-gray-500'
-                        }`}>
-                          {formatTime(msg.timestamp)}
-                        </p>
+                        {!isProject && (
+                          <p className={`text-xs mt-2 ${
+                            isOwn ? 'text-gray-300' : 'text-gray-500'
+                          }`}>
+                            {formatTime(msg.timestamp)}
+                          </p>
+                        )}
                       </div>
                     </div>
                   );

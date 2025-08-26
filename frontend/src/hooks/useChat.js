@@ -13,60 +13,61 @@ export const useChat = () => {
   const loadConversations = useCallback(async () => {
     if (!isAuthenticated || !user) return;
     
+    console.log('🔄 Début chargement conversations...');
     setLoading(true);
     setError(null);
     try {
       const data = await chatAPI.getConversations();
+      console.log('📦 Données reçues du backend:', data);
+      
+      // Les données sont dans data.conversations ou directement dans data
+      const conversationsList = data.conversations || data || [];
+      console.log('📦 Liste des conversations:', conversationsList.length, 'conversations');
       
       // Transformer les données pour le frontend
-      const transformedConversations = data.map(conv => {
-        // Récupérer les participants
-        const clientParticipant = conv.participants.find(p => p.role === 'client');
-        const artistParticipant = conv.participants.find(p => p.role === 'tattoo_artist');
+      const transformedConversations = conversationsList.map(conv => {
+        console.log('🔄 Transformation conversation:', conv.id || conv._id, conv.otherParticipantName);
+        
+        // Les participants sont déjà dans le bon format depuis le backend
+        const clientParticipant = conv.participants?.find(p => p.role === 'client');
+        const artistParticipant = conv.participants?.find(p => p.role === 'tattoo_artist');
         
         return {
-          id: conv._id,
-          // Informations du client
-          clientId: clientParticipant?.userId._id,
-          clientName: clientParticipant?.userId.username || 
-                     `${clientParticipant?.userId.prenom || ''} ${clientParticipant?.userId.nom || ''}`.trim() ||
-                     clientParticipant?.userId.email || 'Client',
-          clientAvatar: (clientParticipant?.userId.username?.[0] || 
-                        clientParticipant?.userId.nom?.[0] || 
-                        clientParticipant?.userId.email?.[0] || 'C').toUpperCase(),
-          
-          // Informations du tatoueur
-          artistId: artistParticipant?.userId._id,
-          artistName: artistParticipant?.userId.username || 
-                     `${artistParticipant?.userId.prenom || ''} ${artistParticipant?.userId.nom || ''}`.trim() ||
-                     artistParticipant?.userId.email || 'Tatoueur',
-          artistAvatar: (artistParticipant?.userId.username?.[0] || 
-                        artistParticipant?.userId.nom?.[0] || 
-                        artistParticipant?.userId.email?.[0] || 'T').toUpperCase(),
-          
-          // Nom de l'autre participant (calculé par le backend)
+          id: conv.id || conv._id,
+          // Utiliser les informations déjà formatées par le backend
           otherParticipantName: conv.otherParticipantName || 'Participant',
           otherParticipantAvatar: conv.otherParticipantAvatar || 'U',
           otherParticipantRole: conv.otherParticipantRole,
           
+          // Informations du client (pour compatibilité)
+          clientId: clientParticipant?.userId?._id || clientParticipant?.userId,
+          clientName: conv.otherParticipantRole === 'client' ? conv.otherParticipantName : 'Client',
+          clientAvatar: conv.otherParticipantRole === 'client' ? conv.otherParticipantAvatar : 'C',
+          
+          // Informations du tatoueur (pour compatibilité)
+          artistId: artistParticipant?.userId?._id || artistParticipant?.userId,
+          artistName: conv.otherParticipantRole === 'tattoo_artist' ? conv.otherParticipantName : 'Tatoueur',
+          artistAvatar: conv.otherParticipantRole === 'tattoo_artist' ? conv.otherParticipantAvatar : 'T',
+          
           // Informations générales
-          lastMessage: conv.lastMessage?.content || 'Nouvelle conversation',
-          lastMessageTime: conv.lastActivity || conv.createdAt,
+          lastMessage: conv.lastMessage || 'Nouvelle conversation',
+          lastMessageTime: conv.lastMessageTime || conv.lastActivity,
           unreadCount: conv.unreadCount || 0,
-          isOnline: Math.random() > 0.5, // Simulé pour le moment
           projectType: conv.projectType || 'autre',
           specialty: conv.specialty || 'Tatouage personnalisé',
-          isActive: conv.isActive
+          isActive: conv.isActive,
+          participants: conv.participants // Garder la structure complète
         };
       });
       
+      console.log('✅ Conversations transformées:', transformedConversations.length);
       setConversations(transformedConversations);
       
       // Calculer le nombre total de messages non lus
       const totalUnread = transformedConversations.reduce((sum, conv) => sum + conv.unreadCount, 0);
       setUnreadCount(totalUnread);
     } catch (err) {
-      console.error('Erreur chargement conversations:', err);
+      console.error('❌ Erreur chargement conversations:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -107,11 +108,28 @@ export const useChat = () => {
 
   // Charger les messages d'une conversation
   const loadMessages = useCallback(async (conversationId) => {
+    if (!conversationId) {
+      throw new Error('ID de conversation manquant');
+    }
+    
     try {
-      const messages = await chatAPI.getMessages(conversationId);
-      return messages;
+      console.log('📨 Chargement messages pour conversation:', conversationId);
+      const response = await chatAPI.getMessages(conversationId);
+      
+      // Vérifier si la réponse contient bien des messages
+      if (!response || !Array.isArray(response)) {
+        throw new Error('Format de réponse invalide');
+      }
+      
+      console.log('✅ Messages reçus:', response.length);
+      return response;
     } catch (err) {
-      console.error('Erreur chargement messages:', err);
+      console.error('❌ Erreur chargement messages:', err);
+      console.error('Details:', {
+        conversationId,
+        errorMessage: err.message,
+        stack: err.stack
+      });
       setError(err.message);
       throw err;
     }

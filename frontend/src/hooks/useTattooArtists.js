@@ -27,13 +27,32 @@ export const useTattooArtists = () => {
 
   // Créer une conversation avec un tatoueur
   const startConversationWith = useCallback(async (tattooArtistId, projectType = 'autre', projectData = null) => {
+    console.log('🚀 Création conversation:', { tattooArtistId, projectType, hasProjectData: !!projectData });
+    
     try {
+      if (!tattooArtistId) {
+        throw new Error('ID du tatoueur manquant');
+      }
+      
       const conversation = await chatAPI.createConversation(tattooArtistId, projectType, projectData);
+      console.log('✅ Conversation créée avec succès:', conversation);
+      
       return conversation;
     } catch (err) {
-      console.error('Erreur création conversation:', err);
-      setError(err.message);
-      throw err;
+      console.error('❌ Erreur création conversation:', err);
+      
+      // Messages d'erreur plus explicites
+      let errorMessage = err.message;
+      if (err.message.includes('Tatoueur introuvable')) {
+        errorMessage = 'Une erreur s\'est produite lors de l\'envoi de votre demande. Le tatoueur recevra votre message dès qu\'il sera de retour !';
+      } else if (err.message.includes('ID de tatoueur invalide')) {
+        errorMessage = 'Impossible de contacter ce tatoueur (ID invalide)';
+      } else if (err.message.includes('network') || err.message.includes('fetch')) {
+        errorMessage = 'Erreur de connexion. Vérifiez votre connexion internet';
+      }
+      
+      setError(errorMessage);
+      throw new Error(errorMessage);
     }
   }, []);
 

@@ -12,10 +12,10 @@ router.get('/conversations', chatController.getUserConversations);
 router.post('/conversations', upload.single('placementPhoto'), chatController.getOrCreateConversation);
 router.get('/conversations/:conversationId/messages', chatController.getConversationMessages);
 router.post('/conversations/:conversationId/messages', chatController.sendMessage);
-router.put('/conversations/:conversationId/read', chatController.markConversationAsRead); // ✅ CORRIGÉ
+router.put('/conversations/:conversationId/read', chatController.markConversationAsRead);
 
 // 🎨 Routes pour les tatoueurs disponibles
-router.get('/tattoo-artists', chatController.getTattooArtists); // ✅ CORRIGÉ nom méthode
+router.get('/tattoo-artists', chatController.getTattooArtists);
 
 // 🔔 Statistiques de messages non lus
 router.get('/unread-count', chatController.getUnreadCount);
