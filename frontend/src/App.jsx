@@ -19,11 +19,12 @@ import { TestPage } from './pages/TestPage';
 import TestLogout from './pages/TestLogout';
 import ChatDebug from './pages/ChatDebug';
 import TestContactTattooArtist from './pages/TestContactTattooArtist';
+import DashboardQuotes from './pages/DashboardQuotes';
 
 // Module Dashboard
 import Agenda from './assets/pages/dashboard/Agenda';
 import Clients from './assets/pages/dashboard/Clients';
-// import Projets from './assets/pages/dashboard/Projets';
+import Projects from './assets/pages/dashboard/Projects';
 // import Devis from './assets/pages/dashboard/Devis';
 // import Paiements from './assets/pages/dashboard/Paiements';
 // import Stock from './assets/pages/dashboard/Stock';
@@ -95,8 +96,9 @@ function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/agenda" element={<Agenda />} />
               <Route path="/clients" element={<Clients />} />
-              {/* <Route path="/projets" element={<Projets />} />
-              <Route path="/devis" element={<Devis />} />
+              <Route path="/devis" element={<DashboardQuotes />} />
+               <Route path="/projets" element={<Projects />} />
+              {/* <Route path="/devis" element={<Devis />} />
               <Route path="/paiements" element={<Paiements />} />
               <Route path="/stock" element={<Stock />} />
               <Route path="/messages" element={<Messages />} />

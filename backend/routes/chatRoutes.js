@@ -4,7 +4,10 @@ const chatController = require('../controllers/chatController');
 const authMiddleware = require('../middleware/auth');
 const { upload } = require('../middleware/upload');
 
-// Middleware d'authentification pour toutes les routes de chat
+// 🌍 Route publique pour les demandes de projet (sans authentification)
+router.post('/conversations/public', upload.single('placementPhoto'), chatController.createPublicConversation);
+
+// Middleware d'authentification pour toutes les autres routes de chat
 router.use(authMiddleware);
 
 // 📥 Routes pour les conversations

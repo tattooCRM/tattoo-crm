@@ -127,7 +127,7 @@ export default function ChatList({ onSelectChat, onStartNewChat }) {
             >
               {/* Avatar avec indicateur en ligne */}
               <div className="relative">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-gray-500 to-gray-600 flex items-center justify-center text-white font-semibold">
                   {conv.artistAvatar}
                 </div>
                 {conv.isOnline && (

@@ -43,11 +43,23 @@ export const chatAPI = {
   },
 
   // Créer une nouvelle conversation
-  createConversation: async (tattooArtistId, projectType = 'autre', projectData = null) => {
+  createConversation: async (tattooArtistIdOrSlug, projectType = 'autre', projectData = null) => {
+    // Déterminer si c'est un ID (ObjectId MongoDB) ou un slug
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(tattooArtistIdOrSlug);
+    const payload = isObjectId 
+      ? { tattooArtistId: tattooArtistIdOrSlug, projectType, projectData }
+      : { tattooArtistSlug: tattooArtistIdOrSlug, projectType, projectData };
+
     // Si projectData contient un fichier, utiliser FormData
     if (projectData && projectData.placementPhoto instanceof File) {
       const formData = new FormData();
-      formData.append('tattooArtistId', tattooArtistId);
+      
+      if (isObjectId) {
+        formData.append('tattooArtistId', tattooArtistIdOrSlug);
+      } else {
+        formData.append('tattooArtistSlug', tattooArtistIdOrSlug);
+      }
+      
       formData.append('projectType', projectType);
       
       // Ajouter la photo
@@ -67,8 +79,63 @@ export const chatAPI = {
       // Requête JSON normale
       return authFetch(`${API_URL}/chat/conversations`, {
         method: 'POST',
-        body: JSON.stringify({ tattooArtistId, projectType, projectData })
+        body: JSON.stringify(payload)
       });
+    }
+  },
+
+  // Créer une conversation publique (sans authentification) - pour les demandes de projets depuis les pages publiques
+  createPublicConversation: async (tattooArtistSlug, clientName, clientEmail, projectType = 'autre', projectData = null) => {
+    // Si projectData contient un fichier, utiliser FormData
+    if (projectData && projectData.placementPhoto instanceof File) {
+      const formData = new FormData();
+      formData.append('tattooArtistSlug', tattooArtistSlug);
+      formData.append('clientName', clientName);
+      formData.append('clientEmail', clientEmail);
+      formData.append('projectType', projectType);
+      
+      // Ajouter la photo
+      formData.append('placementPhoto', projectData.placementPhoto);
+      
+      // Ajouter les autres données du projet
+      const projectDataWithoutFile = { ...projectData };
+      delete projectDataWithoutFile.placementPhoto;
+      delete projectDataWithoutFile.placementPhotoPreview;
+      formData.append('projectData', JSON.stringify(projectDataWithoutFile));
+      
+      const response = await fetch(`${API_URL}/chat/conversations/public`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erreur serveur');
+      }
+      
+      return response.json();
+    } else {
+      // Requête JSON normale
+      const response = await fetch(`${API_URL}/chat/conversations/public`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          tattooArtistSlug, 
+          clientName, 
+          clientEmail, 
+          projectType, 
+          projectData 
+        })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erreur serveur');
+      }
+      
+      return response.json();
     }
   },
 

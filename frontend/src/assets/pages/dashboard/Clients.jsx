@@ -18,30 +18,33 @@ export default function Clients() {
   const { addClientCreatedNotification, addClientUpdatedNotification, addSystemNotification } = useNotificationsSystem();
   const { showToast } = useToast();
 
-  // Charger les clients (simulation)
+  // Charger les clients depuis l'API
   useEffect(() => {
-    // Données de démo
-    setClients([
-      {
-        id: 1,
-        nom: 'Dupont',
-        prenom: 'Marie',
-        email: 'marie.dupont@example.com',
-        telephone: '06 12 34 56 78',
-        notes: 'Préfère les tatouages minimalistes',
-        createdAt: new Date('2024-01-15')
-      },
-      {
-        id: 2,
-        nom: 'Martin',
-        prenom: 'Pierre',
-        email: 'pierre.martin@example.com',
-        telephone: '07 98 76 54 32',
-        notes: 'Passionné de tribal',
-        createdAt: new Date('2024-02-10')
-      }
-    ]);
+    fetchClients();
   }, []);
+
+  const fetchClients = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:3001/api/clients', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setClients(data);
+      } else {
+        console.error('Erreur lors du chargement des clients');
+        showToast('Erreur lors du chargement des clients', 'error');
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des clients:', error);
+      showToast('Erreur lors du chargement des clients', 'error');
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();

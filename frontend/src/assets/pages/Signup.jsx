@@ -30,7 +30,6 @@ function Signup() {
         throw new Error(data.message || 'Erreur lors de l\'inscription');
       }
 
-      console.log('Inscription réussie:', data);
       window.location.href = "/login";
     } catch (error) {
       setError(error.message);
@@ -43,7 +42,7 @@ function Signup() {
     <div className="flex justify-center items-center min-h-screen bg-neutral-100 text-white">
       <div className="w-full max-w-md p-8 bg-zinc-900 rounded-xl shadow-lg">
         <h1 className="text-3xl font-bold mb-6 text-center font-serif tracking-wider">
-          InkFlow
+          InkStudio
         </h1>
 
         {error && (
@@ -54,22 +53,22 @@ function Signup() {
           {/*Nom*/}
           <div>
             <label className="block mb-1 text-sm font-medium">Nom</label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Votre nom"/>
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500" placeholder="Votre nom"/>
           </div>
 
           {/*Rôle*/}
           <div>
             <label className="block mb-1 text-sm font-medium">Rôle</label>
-            <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              <option value="user">Utilisateur</option>
-              <option value="admin">Tatoueur</option>
+            <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500">
+              <option value="client">Utilisateur</option>
+              <option value="tattoo_artist">Tatoueur</option>
             </select>
           </div>
 
           {/*Email*/}
           <div>
             <label className="block mb-1 text-sm font-medium">Email</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="exemple@email.com" />
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500" placeholder="exemple@email.com" />
           </div>
 
           {/*Mot de passe*/}
@@ -81,7 +80,7 @@ function Signup() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
                 placeholder="Votre mot de passe"
               />
               <button
@@ -98,14 +97,14 @@ function Signup() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 transition-colors rounded-md font-semibold"
+            className="w-full py-2 bg-gray-800 hover:bg-gray-900 transition-colors rounded-md font-semibold"
           >
             {loading ? 'Inscription...' : 'S\'inscrire'}
           </button>
 
           {/*Lien vers la page de connexion*/}
           <div className="text-sm text-center mt-2">
-            <a href="/login" className="text-indigo-400 hover:underline">
+            <a href="/login" className="text-gray-400 hover:underline">
 
               Déjà inscrit ? Connectez-vous
             </a>

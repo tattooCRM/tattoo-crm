@@ -1,8 +1,15 @@
 import React, { useState } from 'react';
-import { X, Upload, MapPin, Palette, DollarSign, Calendar, FileText, Camera, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { X, Upload, MapPin, Palette, DollarSign, Calendar, FileText, Camera, Eye, EyeOff, AlertCircle, User, Mail } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 const ProjectContactModal = ({ isOpen, onClose, onSubmit, artistName, artistSpecialty, loading }) => {
+  const { isAuthenticated, user } = useAuth();
+  
   const [formData, setFormData] = useState({
+    // Client information (for non-authenticated users)
+    clientName: '',
+    clientEmail: '',
+    // Project information
     projectType: '',
     bodyZone: '',
     style: '',
@@ -174,6 +181,16 @@ const ProjectContactModal = ({ isOpen, onClose, onSubmit, artistName, artistSpec
   const validateForm = () => {
     const newErrors = {};
 
+    // Validation des champs client pour les utilisateurs non connectés
+    if (!isAuthenticated) {
+      if (!formData.clientName.trim()) newErrors.clientName = 'Veuillez indiquer votre nom';
+      if (!formData.clientEmail.trim()) newErrors.clientEmail = 'Veuillez indiquer votre email';
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.clientEmail)) {
+        newErrors.clientEmail = 'Email invalide';
+      }
+    }
+
+    // Validation des champs du projet
     if (!formData.projectType) newErrors.projectType = 'Veuillez sélectionner un type de projet';
     if (!formData.bodyZone) newErrors.bodyZone = 'Veuillez indiquer la zone du corps';
     if (!formData.style) newErrors.style = 'Veuillez sélectionner un style';
@@ -202,6 +219,8 @@ const ProjectContactModal = ({ isOpen, onClose, onSubmit, artistName, artistSpec
 
   const handleReset = () => {
     setFormData({
+      clientName: '',
+      clientEmail: '',
       projectType: '',
       bodyZone: '',
       style: '',
@@ -243,6 +262,52 @@ const ProjectContactModal = ({ isOpen, onClose, onSubmit, artistName, artistSpec
         <div className="flex-1 overflow-y-auto p-4 min-h-0">
           <form onSubmit={handleSubmit} className="space-y-6">
             
+            {/* Informations client pour les utilisateurs non connectés */}
+            {!isAuthenticated && (
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h4 className="text-sm font-medium text-blue-900 mb-3 flex items-center">
+                  <User size={16} className="mr-2" />
+                  Vos coordonnées
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-blue-900 mb-1">
+                      Nom complet *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.clientName}
+                      onChange={(e) => handleInputChange('clientName', e.target.value)}
+                      className="w-full p-2 border border-blue-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Votre nom et prénom"
+                    />
+                    {errors.clientName && (
+                      <p className="text-red-500 text-xs mt-1">{errors.clientName}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-blue-900 mb-1">
+                      <Mail size={14} className="inline mr-1" />
+                      Email *
+                    </label>
+                    <input
+                      type="email"
+                      value={formData.clientEmail}
+                      onChange={(e) => handleInputChange('clientEmail', e.target.value)}
+                      className="w-full p-2 border border-blue-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="votre@email.com"
+                    />
+                    {errors.clientEmail && (
+                      <p className="text-red-500 text-xs mt-1">{errors.clientEmail}</p>
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-blue-600 mt-2">
+                  Ces informations permettront au tatoueur de vous contacter directement.
+                </p>
+              </div>
+            )}
+
             {/* Type de projet */}
             <div>
               <label className="block text-sm font-medium text-gray-900 mb-2">

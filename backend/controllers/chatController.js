@@ -43,195 +43,299 @@ const createProjectMessage = (projectData) => {
 
   const message = `
 <div style="
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-  border-radius: 16px;
-  padding: 24px;
-  margin: 16px 0;
-  box-shadow: 0 15px 40px rgba(0,0,0,0.4);
-  color: white;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  max-width: 600px;
-  border: 1px solid rgba(255,255,255,0.1);
+  background: #2d3748;
+  color: #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 12px 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  border: 1px solid #4a5568;
+  max-width: 400px;
 ">
+  <!-- Header -->
   <div style="
-    text-align: center;
-    margin-bottom: 24px;
-    padding-bottom: 20px;
-    border-bottom: 2px solid rgba(255,255,255,0.15);
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #4a5568;
   ">
-    <h2 style="
-      margin: 0;
-      font-size: 24px;
-      font-weight: 700;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-    ">🎨 DEMANDE DE PROJET</h2>
+    <div style="
+      background: #3182ce;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+    ">
+      <span style="font-size: 16px;">🎨</span>
+    </div>
+    <h4 style="margin: 0; font-size: 16px; font-weight: 600; color: #ffffff;">Demande de tatouage</h4>
   </div>
 
-  <div style="
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 16px;
-    margin-bottom: 20px;
-  ">
+  <!-- Infos principales -->
+  <div style="margin-bottom: 16px;">
     ${projectData.projectType ? `
-    <div style="
-      background: rgba(255,255,255,0.08);
-      backdrop-filter: blur(10px);
-      border-radius: 12px;
-      padding: 16px;
-      border: 1px solid rgba(255,255,255,0.15);
-    ">
-      <div style="display: flex; align-items: center; margin-bottom: 8px;">
-        <span style="font-size: 20px; margin-right: 8px;">📋</span>
-        <strong style="font-size: 14px; opacity: 0.9;">Type de projet</strong>
-      </div>
-      <div style="font-size: 16px; font-weight: 600;">
-        ${projectTypes[projectData.projectType] || projectData.projectType}
-      </div>
+    <div style="margin-bottom: 8px;">
+      <span style="font-size: 12px; color: #a0aec0; text-transform: uppercase; font-weight: 500;">Type</span>
+      <div style="font-size: 14px; color: #ffffff; margin-top: 2px;">${projectTypes[projectData.projectType] || projectData.projectType}</div>
     </div>` : ''}
     
     ${projectData.bodyZone ? `
-    <div style="
-      background: rgba(255,255,255,0.08);
-      backdrop-filter: blur(10px);
-      border-radius: 12px;
-      padding: 16px;
-      border: 1px solid rgba(255,255,255,0.15);
-    ">
-      <div style="display: flex; align-items: center; margin-bottom: 8px;">
-        <span style="font-size: 20px; margin-right: 8px;">📍</span>
-        <strong style="font-size: 14px; opacity: 0.9;">Zone du corps</strong>
-      </div>
-      <div style="font-size: 16px; font-weight: 600;">
-        ${bodyZones[projectData.bodyZone] || projectData.bodyZone}
-      </div>
+    <div style="margin-bottom: 8px;">
+      <span style="font-size: 12px; color: #a0aec0; text-transform: uppercase; font-weight: 500;">Zone</span>
+      <div style="font-size: 14px; color: #ffffff; margin-top: 2px;">${bodyZones[projectData.bodyZone] || projectData.bodyZone}</div>
     </div>` : ''}
     
-    ${projectData.style ? `
-    <div style="
-      background: rgba(255,255,255,0.08);
-      backdrop-filter: blur(10px);
-      border-radius: 12px;
-      padding: 16px;
-      border: 1px solid rgba(255,255,255,0.15);
-    ">
-      <div style="display: flex; align-items: center; margin-bottom: 8px;">
-        <span style="font-size: 20px; margin-right: 8px;">🎭</span>
-        <strong style="font-size: 14px; opacity: 0.9;">Style</strong>
+    ${projectData.style && projectData.size ? `
+    <div style="display: flex; gap: 20px; margin-bottom: 8px;">
+      <div style="flex: 1;">
+        <span style="font-size: 12px; color: #a0aec0; text-transform: uppercase; font-weight: 500;">Style</span>
+        <div style="font-size: 14px; color: #ffffff; margin-top: 2px;">${styles[projectData.style] || projectData.style}</div>
       </div>
-      <div style="font-size: 16px; font-weight: 600;">
-        ${styles[projectData.style] || projectData.style}
+      <div style="flex: 1;">
+        <span style="font-size: 12px; color: #a0aec0; text-transform: uppercase; font-weight: 500;">Taille</span>
+        <div style="font-size: 14px; color: #ffffff; margin-top: 2px;">${sizes[projectData.size] || projectData.size}</div>
       </div>
+    </div>` : 
+    `${projectData.style ? `
+    <div style="margin-bottom: 8px;">
+      <span style="font-size: 12px; color: #a0aec0; text-transform: uppercase; font-weight: 500;">Style</span>
+      <div style="font-size: 14px; color: #ffffff; margin-top: 2px;">${styles[projectData.style] || projectData.style}</div>
     </div>` : ''}
-    
     ${projectData.size ? `
-    <div style="
-      background: rgba(255,255,255,0.08);
-      backdrop-filter: blur(10px);
-      border-radius: 12px;
-      padding: 16px;
-      border: 1px solid rgba(255,255,255,0.15);
-    ">
-      <div style="display: flex; align-items: center; margin-bottom: 8px;">
-        <span style="font-size: 20px; margin-right: 8px;">📐</span>
-        <strong style="font-size: 14px; opacity: 0.9;">Taille</strong>
-      </div>
-      <div style="font-size: 16px; font-weight: 600;">
-        ${sizes[projectData.size] || projectData.size}
-      </div>
-    </div>` : ''}
+    <div style="margin-bottom: 8px;">
+      <span style="font-size: 12px; color: #a0aec0; text-transform: uppercase; font-weight: 500;">Taille</span>
+      <div style="font-size: 14px; color: #ffffff; margin-top: 2px;">${sizes[projectData.size] || projectData.size}</div>
+    </div>` : ''}`}
   </div>
 
+  <!-- Description -->
   ${projectData.description ? `
   <div style="
-    background: rgba(255,255,255,0.05);
-    border-radius: 12px;
-    padding: 20px;
-    margin: 20px 0;
-    border-left: 4px solid #00D4FF;
+    background: #1a202c;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+    border: 1px solid #4a5568;
   ">
-    <div style="display: flex; align-items: center; margin-bottom: 12px;">
-      <span style="font-size: 22px; margin-right: 8px;">💭</span>
-      <strong style="font-size: 16px;">Description du projet</strong>
-    </div>
+    <span style="font-size: 12px; color: #a0aec0; text-transform: uppercase; font-weight: 500;">Description</span>
     <p style="
-      margin: 0;
-      line-height: 1.6;
-      font-size: 15px;
-      opacity: 0.95;
+      margin: 6px 0 0 0;
+      font-size: 14px;
+      line-height: 1.4;
+      color: #e2e8f0;
     ">${projectData.description}</p>
   </div>` : ''}
 
+  <!-- Budget et Disponibilités -->
   ${(projectData.budget || projectData.availability) ? `
-  <div style="
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 12px;
-    margin: 20px 0;
-  ">
+  <div style="display: flex; gap: 12px; margin-bottom: 12px;">
     ${projectData.budget ? `
     <div style="
-      background: rgba(0, 255, 127, 0.1);
-      border-radius: 8px;
-      padding: 12px;
-      border-left: 3px solid #00FF7F;
+      flex: 1;
+      background: #1a202c;
+      border-radius: 6px;
+      padding: 8px;
+      border: 1px solid #4a5568;
     ">
-      <div style="display: flex; align-items: center;">
-        <span style="margin-right: 8px;">💰</span>
-        <strong style="margin-right: 8px;">Budget:</strong>
-        <span>${projectData.budget}</span>
-      </div>
+      <span style="font-size: 11px; color: #68d391; text-transform: uppercase; font-weight: 600;">Budget</span>
+      <div style="font-size: 13px; color: #ffffff; margin-top: 2px;">${projectData.budget}</div>
     </div>` : ''}
     
     ${projectData.availability ? `
     <div style="
-      background: rgba(0, 191, 255, 0.1);
-      border-radius: 8px;
-      padding: 12px;
-      border-left: 3px solid #00BFFF;
+      flex: 1;
+      background: #1a202c;
+      border-radius: 6px;
+      padding: 8px;
+      border: 1px solid #4a5568;
     ">
-      <div style="display: flex; align-items: center;">
-        <span style="margin-right: 8px;">⏰</span>
-        <strong style="margin-right: 8px;">Disponibilités:</strong>
-        <span>${projectData.availability}</span>
-      </div>
+      <span style="font-size: 11px; color: #63b3ed; text-transform: uppercase; font-weight: 600;">Disponibilités</span>
+      <div style="font-size: 13px; color: #ffffff; margin-top: 2px;">${projectData.availability}</div>
     </div>` : ''}
   </div>` : ''}
 
+  <!-- Notes importantes -->
   ${(projectData.isIntimate || projectData.placementPhoto) ? `
   <div style="
-    background: rgba(255, 193, 7, 0.1);
-    border-radius: 8px;
-    padding: 16px;
-    border: 1px solid rgba(255, 193, 7, 0.3);
-    margin-top: 16px;
+    background: #2d3748;
+    border: 1px solid #f6ad55;
+    border-radius: 6px;
+    padding: 8px;
   ">
-    <div style="display: flex; align-items: center; margin-bottom: 8px;">
-      <span style="font-size: 18px; margin-right: 8px;">⚠️</span>
-      <strong>Notes importantes</strong>
+    <span style="font-size: 11px; color: #f6ad55; text-transform: uppercase; font-weight: 600;">Notes</span>
+    <div style="margin-top: 4px;">
+      ${projectData.isIntimate ? '<div style="font-size: 12px; color: #fbb6ce;">🔒 Zone intime</div>' : ''}
+      ${projectData.placementPhoto ? '<div style="font-size: 12px; color: #fbb6ce;">📸 Photo fournie</div>' : ''}
     </div>
-    ${projectData.isIntimate ? '<div>🔒 Zone intime - précautions particulières requises</div>' : ''}
-    ${projectData.placementPhoto ? '<div>📸 Photo de placement fournie</div>' : ''}
   </div>` : ''}
-
 
 </div>`;
 
   return message;
 };
 
+// Fonction utilitaire pour nettoyer le HTML et créer un aperçu propre
+const createMessagePreview = (message) => {
+  if (!message || !message.content) {
+    return 'Nouvelle conversation';
+  }
+
+  // Si c'est un message de type 'project', créer un aperçu personnalisé
+  if (message.type === 'project') {
+    return '🎨 Nouvelle demande de tatouage';
+  }
+
+  // Pour les messages texte normaux, retourner le contenu tel quel
+  if (message.type === 'text' || !message.type) {
+    return message.content.substring(0, 100) + (message.content.length > 100 ? '...' : '');
+  }
+
+  // Pour d'autres types de messages
+  return message.content.substring(0, 100) + (message.content.length > 100 ? '...' : '');
+};
+
+// Créer une conversation publique (sans authentification requise) - POUR LES DEMANDES DE PROJETS
+exports.createPublicConversation = async (req, res) => {
+  try {
+    let { tattooArtistId, tattooArtistSlug, projectType = 'autre', projectData, clientName, clientEmail } = req.body;
+
+    console.log('🔓 PUBLIC - Création conversation:', {
+      tattooArtistId,
+      tattooArtistSlug,
+      projectType,
+      hasProjectData: !!projectData,
+      clientName,
+      clientEmail
+    });
+
+    if (typeof projectData === 'string') {
+      try {
+        projectData = JSON.parse(projectData);
+      } catch {
+        projectData = null;
+      }
+    }
+
+    // Validation des données requises
+    if (!clientName || !clientEmail) {
+      return res.status(400).json({ message: 'Nom et email du client requis' });
+    }
+
+    // Trouver ou créer le client
+    let client = await User.findOne({ email: clientEmail.toLowerCase() });
+    
+    if (!client) {
+      // Créer un nouveau client
+      client = new User({
+        name: clientName,
+        email: clientEmail.toLowerCase(),
+        role: 'client',
+        password: 'temp_' + Math.random().toString(36).substring(2, 15)
+      });
+      await client.save();
+    }
+
+    // Recherche du tatoueur (même logique que getOrCreateConversation)
+    let tattooArtist = null;
+    if (tattooArtistSlug) {
+      tattooArtist = await User.findOne({
+        slug: tattooArtistSlug.toLowerCase(),
+        role: 'tattoo_artist'
+      });
+      if (!tattooArtist) {
+        tattooArtist = await User.findOne({
+          name: { $regex: new RegExp(tattooArtistSlug.replace('-', ' '), 'i') },
+          role: 'tattoo_artist'
+        });
+      }
+      if (tattooArtist) {
+        tattooArtistId = tattooArtist._id;
+      }
+    } else if (tattooArtistId && mongoose.Types.ObjectId.isValid(tattooArtistId)) {
+      tattooArtist = await User.findById(tattooArtistId);
+    }
+
+    if (!tattooArtist) {
+      return res.status(404).json({ message: 'Tatoueur non trouvé' });
+    }
+
+    // Créer ou récupérer la conversation
+    let conversation = await Conversation.findOne({
+      'participants.userId': { $all: [client._id, tattooArtistId] }
+    });
+
+    if (!conversation) {
+      conversation = new Conversation({
+        participants: [
+          { userId: client._id, role: 'client' },
+          { userId: tattooArtistId, role: 'tattoo_artist' }
+        ],
+        projectType: projectType
+      });
+      await conversation.save();
+    }
+
+    // Créer le message de projet
+    if (projectData) {
+      const messageContent = createProjectMessage(projectData);
+
+      const message = new Message({
+        conversationId: conversation._id,
+        senderId: client._id,
+        content: messageContent,
+        type: 'project'
+      });
+
+      if (req.file) {
+        message.attachments = [{
+          filename: req.file.filename,
+          originalName: req.file.originalname,
+          mimetype: req.file.mimetype,
+          size: req.file.size,
+          path: req.file.path
+        }];
+      }
+
+      await message.save();
+
+      conversation.lastMessage = message._id;
+      conversation.lastActivity = new Date();
+      await conversation.save();
+    }
+
+    res.status(200).json({ 
+      conversation: {
+        _id: conversation._id,
+        id: conversation._id,
+        participants: conversation.participants,
+        projectType: conversation.projectType
+      }, 
+      message: 'Demande envoyée avec succès'
+    });
+
+  } catch (error) {
+    console.error('❌ PUBLIC - Erreur création conversation:', error);
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
 // Créer ou récupérer une conversation
 exports.getOrCreateConversation = async (req, res) => {
   try {
     const clientId = req.user.id;
-    let { tattooArtistId, projectType = 'autre', projectData } = req.body;
+    let { tattooArtistId, tattooArtistSlug, projectType = 'autre', projectData } = req.body;
 
-    console.log(`📝 Nouvelle demande de conversation:`, {
-      clientId,
+    console.log('Debug création conversation:', {
       tattooArtistId,
+      tattooArtistSlug,
       projectType,
       hasProjectData: !!projectData,
-      userRole: req.user.role
+      clientId,
+      body: req.body
     });
 
     if (typeof projectData === 'string') {
@@ -246,19 +350,55 @@ exports.getOrCreateConversation = async (req, res) => {
       return res.status(403).json({ message: 'Seuls les clients peuvent initier des conversations' });
     }
 
-    // Vérifier si l'ID du tatoueur est valide
-    if (!tattooArtistId || !mongoose.Types.ObjectId.isValid(tattooArtistId)) {
-      return res.status(400).json({ message: 'ID de tatoueur invalide' });
+    let tattooArtist = null;
+
+    // Si on a un slug, chercher par slug d'abord
+    if (tattooArtistSlug) {
+      
+      tattooArtist = await User.findOne({
+        slug: tattooArtistSlug.toLowerCase(),
+        role: 'tattoo_artist'
+      });
+
+      if (!tattooArtist) {
+        // Essayer par nom si le slug ne marche pas
+        tattooArtist = await User.findOne({
+          name: { $regex: new RegExp(tattooArtistSlug.replace('-', ' '), 'i') },
+          role: 'tattoo_artist'
+        });
+      }
+
+      if (tattooArtist) {
+        tattooArtistId = tattooArtist._id;
+      } else {
+        
+        // Vérifier tous les tatoueurs disponibles pour debug
+        const allArtists = await User.find({ role: 'tattoo_artist' }, 'name slug');
+        console.log('Debug tatoueurs disponibles:', allArtists);
+        
+        return res.status(404).json({ message: 'Tatoueur non trouvé' });
+      }
+    }
+    // Sinon, chercher par ID
+    else if (tattooArtistId && mongoose.Types.ObjectId.isValid(tattooArtistId)) {
+      tattooArtist = await User.findOne({
+        _id: tattooArtistId,
+        role: 'tattoo_artist'
+      });
+      
+      if (!tattooArtist) {
+        console.log('Debug: Tatoueur non trouvé par ID:', tattooArtistId);
+        return res.status(404).json({ message: 'Tatoueur non trouvé avec cet ID' });
+      }
+    } else {
+      return res.status(400).json({ message: 'ID ou slug de tatoueur requis' });
     }
 
-    console.log(`🔍 Recherche tatoueur avec ID: ${tattooArtistId}`);
-    
-    const tattooArtist = await User.findById(tattooArtistId);
-    console.log(`Tatoueur trouvé:`, tattooArtist ? tattooArtist.name : 'Non trouvé');
-    
     if (!tattooArtist) {
-      console.log(`⚠️ Tatoueur non trouvé avec l'ID ${tattooArtistId}, mais on va quand même créer une conversation pour permettre le contact hors ligne`);
-    } else if (tattooArtist.role !== 'tattoo_artist') {
+      return res.status(404).json({ message: 'Tatoueur non trouvé' });
+    }
+
+    if (tattooArtist.role !== 'tattoo_artist') {
       return res.status(400).json({ message: `Cet utilisateur n'est pas un tatoueur (rôle: ${tattooArtist.role})` });
     }
 
@@ -275,6 +415,7 @@ exports.getOrCreateConversation = async (req, res) => {
         projectType: projectType
       });
       await conversation.save();
+    } else {
     }
 
     if (projectData) {
@@ -330,26 +471,68 @@ exports.getOrCreateConversation = async (req, res) => {
 exports.getUserConversations = async (req, res) => {
   try {
     const userId = req.user.id;
-    console.log(`📋 Récupération des conversations pour l'utilisateur: ${userId}`);
+    const userRole = req.user.role;
+
+    console.log('Debug recherche artiste:', {
+      userId, 
+      userRole, 
+      userName: req.user.name || req.user.email 
+    });
 
     const conversations = await Conversation.find({
       'participants.userId': userId,
       isActive: true
     })
-    .populate('participants.userId', 'name email role specialty slug')
+    .populate('participants.userId', 'name prenom nom email role specialty slug')
     .populate('lastMessage')
     .sort({ lastActivity: -1 });
 
-    console.log(`📋 Trouvé ${conversations.length} conversations`);
 
     const formattedConversations = conversations.map(conv => {
       const otherParticipant = conv.participants.find(p => p.userId && p.userId._id && p.userId._id.toString() !== userId);
       const otherUser = otherParticipant ? otherParticipant.userId : null;
 
-      // FIX: Meilleure gestion des noms pour éviter "Utilisateur inconnu"
-      let displayName = 'Utilisateur inconnu';
+      console.log('Debug conversation existante:', {
+        convId: conv._id,
+        participants: conv.participants.map(p => ({ 
+          userId: p.userId ? p.userId._id : 'NO_ID', 
+          name: p.userId ? p.userId.name : 'NO_NAME',
+          prenom: p.userId ? p.userId.prenom : 'NO_PRENOM',
+          role: p.role 
+        })),
+        otherParticipant: otherParticipant ? {
+          role: otherParticipant.role,
+          userId: otherParticipant.userId._id,
+          name: otherParticipant.userId.name,
+          prenom: otherParticipant.userId.prenom
+        } : 'NO_OTHER_PARTICIPANT',
+        lastMessage: conv.lastMessage ? {
+          type: conv.lastMessage.type,
+          content: conv.lastMessage.content?.substring(0, 50) + '...'
+        } : 'NO_MESSAGE'
+      });
+
+      // Meilleure gestion des noms pour éviter "Utilisateur inconnu"
+      let displayName = 'Utilisateur non trouvé';
+      let avatarLetter = 'U';
+      
       if (otherUser) {
-        displayName = otherUser.name || otherUser.slug || otherUser.email || 'Utilisateur inconnu';
+        // Priorité: prenom + nom > name > email (partie avant @) > slug > défaut basé sur rôle
+        if (otherUser.prenom && otherUser.nom) {
+          displayName = `${otherUser.prenom} ${otherUser.nom}`.trim();
+        } else if (otherUser.prenom) {
+          displayName = otherUser.prenom.trim();
+        } else if (otherUser.name && otherUser.name.trim()) {
+          displayName = otherUser.name.trim();
+        } else if (otherUser.email) {
+          displayName = otherUser.email.split('@')[0];
+        } else if (otherUser.slug) {
+          displayName = otherUser.slug.replace('-', ' ');
+        } else {
+          displayName = otherUser.role === 'tattoo_artist' ? 'Tatoueur' : 'Client';
+        }
+        avatarLetter = displayName.charAt(0).toUpperCase();
+      } else {
       }
 
       return {
@@ -358,10 +541,10 @@ exports.getUserConversations = async (req, res) => {
         participants: conv.participants,
         otherParticipantId: otherUser ? otherUser._id : null,
         otherParticipantName: displayName,
-        otherParticipantAvatar: displayName.charAt(0).toUpperCase(),
+        otherParticipantAvatar: avatarLetter,
         otherParticipantRole: otherParticipant ? otherParticipant.role : null,
         specialty: otherUser ? (otherUser.specialty || 'Non spécifié') : 'Non spécifié',
-        lastMessage: conv.lastMessage ? conv.lastMessage.content.substring(0, 100) + '...' : 'Nouvelle conversation',
+        lastMessage: createMessagePreview(conv.lastMessage),
         lastMessageTime: conv.lastActivity || conv.createdAt,
         lastActivity: conv.lastActivity || conv.createdAt,
         unreadCount: 0,
@@ -385,34 +568,71 @@ exports.getConversationMessages = async (req, res) => {
   try {
     const { conversationId } = req.params;
     const userId = req.user.id;
+    const userRole = req.user.role;
 
-    console.log(`📨 Récupération des messages pour conversation: ${conversationId}, utilisateur: ${userId}`);
+    console.log('Debug récupération messages:', {
+      conversationId, 
+      userId, 
+      userRole, 
+      userName: req.user.name || req.user.email 
+    });
+
 
     if (!mongoose.Types.ObjectId.isValid(conversationId)) {
-      console.log(`❌ ID de conversation invalide: ${conversationId}`);
       return res.status(400).json({ message: 'ID de conversation invalide' });
     }
 
     const conversation = await Conversation.findById(conversationId);
     if (!conversation) {
-      console.log(`❌ Conversation non trouvée: ${conversationId}`);
       return res.status(404).json({ message: 'Conversation non trouvée' });
     }
 
+    console.log('Debug participants:', conversation.participants.map(p => ({
+      userId: p.userId,
+      role: p.role
+    })));
+
     if (!conversation.participants.some(p => p.userId.toString() === userId)) {
-      console.log(`❌ Accès non autorisé pour l'utilisateur: ${userId}`);
       return res.status(403).json({ message: 'Accès non autorisé à cette conversation' });
     }
 
     const messages = await Message.find({ conversationId: conversationId })
-      .populate('senderId', 'name email role slug')
+      .populate('senderId', 'name prenom nom email role slug')
       .sort({ createdAt: 1 });
 
-    console.log(`📝 Trouvé ${messages.length} messages`);
+    messages.forEach((msg, index) => {
+      console.log(`Debug message ${index}:`, {
+        id: msg._id,
+        type: msg.type,
+        senderId: msg.senderId._id,
+        senderRole: msg.senderId.role,
+        senderName: msg.senderId.name || msg.senderId.email,
+        contentLength: msg.content?.length || 0,
+        contentPreview: msg.content?.substring(0, 100) || 'NO_CONTENT',
+        createdAt: msg.createdAt,
+        isFromClient: msg.senderId.role === 'client'
+      });
+    });
 
     const formattedMessages = messages.map(msg => {
-      // FIX: Meilleure gestion des noms pour éviter "Utilisateur inconnu"
-      const senderName = msg.senderId?.name || msg.senderId?.slug || msg.senderId?.email || 'Utilisateur inconnu';
+      // Meilleure gestion des noms pour éviter "Utilisateur inconnu"
+      let senderName = 'Expéditeur';
+      
+      if (msg.senderId) {
+        if (msg.senderId.prenom && msg.senderId.nom) {
+          senderName = `${msg.senderId.prenom} ${msg.senderId.nom}`.trim();
+        } else if (msg.senderId.prenom) {
+          senderName = msg.senderId.prenom.trim();
+        } else if (msg.senderId.name && msg.senderId.name.trim()) {
+          senderName = msg.senderId.name.trim();
+        } else if (msg.senderId.email) {
+          senderName = msg.senderId.email.split('@')[0];
+        } else if (msg.senderId.slug) {
+          senderName = msg.senderId.slug.replace('-', ' ');
+        } else {
+          senderName = msg.senderId.role === 'tattoo_artist' ? 'Tatoueur' : 'Client';
+        }
+      }
       
       return {
         id: msg._id,
@@ -431,7 +651,6 @@ exports.getConversationMessages = async (req, res) => {
       };
     });
 
-    console.log(`✅ Messages formatés: ${formattedMessages.length}`);
     res.status(200).json({ messages: formattedMessages });
 
   } catch (error) {
@@ -461,14 +680,30 @@ exports.sendMessage = async (req, res) => {
     });
 
     await message.save();
-    await message.populate('senderId', 'name email role slug');
+    await message.populate('senderId', 'name prenom nom email role slug');
 
     conversation.lastMessage = message._id;
     conversation.lastActivity = new Date();
     await conversation.save();
 
-    // FIX: Meilleure gestion des noms pour éviter "Utilisateur inconnu"
-    const senderName = message.senderId?.name || message.senderId?.slug || message.senderId?.email || 'Utilisateur inconnu';
+    // Meilleure gestion des noms pour éviter "Utilisateur inconnu"
+    let senderName = 'Expéditeur';
+    
+    if (message.senderId) {
+      if (message.senderId.prenom && message.senderId.nom) {
+        senderName = `${message.senderId.prenom} ${message.senderId.nom}`.trim();
+      } else if (message.senderId.prenom) {
+        senderName = message.senderId.prenom.trim();
+      } else if (message.senderId.name && message.senderId.name.trim()) {
+        senderName = message.senderId.name.trim();
+      } else if (message.senderId.email) {
+        senderName = message.senderId.email.split('@')[0];
+      } else if (message.senderId.slug) {
+        senderName = message.senderId.slug.replace('-', ' ');
+      } else {
+        senderName = message.senderId.role === 'tattoo_artist' ? 'Tatoueur' : 'Client';
+      }
+    }
 
     res.status(201).json({
       message: {
@@ -553,7 +788,6 @@ exports.getTattooArtists = async (req, res) => {
       'name slug specialty bio instagram profilePhoto'
     ).lean();
 
-    console.log(`🎨 Trouvé ${artists.length} tatoueurs disponibles`);
     res.status(200).json({ artists });
   } catch (error) {
     console.error('Erreur récupération tatoueurs:', error);
@@ -565,7 +799,6 @@ exports.getTattooArtists = async (req, res) => {
 exports.getTattooArtistBySlug = async (req, res) => {
   try {
     const { slug } = req.params;
-    console.log(`🔍 Recherche tatoueur avec slug: "${slug}"`);
 
     // Essayer d'abord avec une page publique
     const page = await PublicPage.findOne({ 
@@ -574,7 +807,6 @@ exports.getTattooArtistBySlug = async (req, res) => {
     }).populate('userId', 'name slug bio instagram profilePhoto specialty');
 
     if (page) {
-      console.log(`✅ Page publique trouvée pour: ${slug}`);
       return res.json(page);
     }
 
@@ -589,7 +821,6 @@ exports.getTattooArtistBySlug = async (req, res) => {
     }).select('name slug bio instagram profilePhoto specialty');
 
     if (tattooArtist) {
-      console.log(`✅ Tatoueur trouvé: ${tattooArtist.name}`);
       return res.json(tattooArtist);
     }
 
@@ -599,7 +830,6 @@ exports.getTattooArtistBySlug = async (req, res) => {
       role: 'tattoo_artist'
     }).select('name slug bio instagram profilePhoto specialty');
 
-    console.log(artistByName ? `✅ Tatoueur trouvé par nom: ${artistByName.name}` : `❌ Aucun tatoueur trouvé pour: ${slug}`);
     return res.json(artistByName || null);
 
   } catch (error) {

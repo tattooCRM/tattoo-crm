@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 require('dotenv').config();
 
@@ -7,7 +8,6 @@ async function createTestUser() {
   try {
     // Connexion à MongoDB
     await mongoose.connect(process.env.MONGO_URI);
-    console.log('✅ MongoDB connecté');
 
     // Supprimer l'utilisateur test s'il existe déjà
     await User.deleteOne({ email: 'test@example.com' });
@@ -28,7 +28,6 @@ async function createTestUser() {
     });
 
     await testClient.save();
-    console.log('✅ Client test créé:', testClient.email, testClient._id);
 
     // Créer un tatoueur test
     const testTattooArtist = new User({
@@ -46,7 +45,35 @@ async function createTestUser() {
     });
 
     await testTattooArtist.save();
-    console.log('✅ Tatoueur test créé:', testTattooArtist.email, testTattooArtist._id);
+
+    console.log('✅ Utilisateurs test créés');
+    
+    // Générer un token JWT pour le client
+    const token = jwt.sign(
+      { 
+        id: testClient._id, 
+        email: testClient.email, 
+        role: testClient.role 
+      }, 
+      process.env.JWT_SECRET, 
+      { expiresIn: '24h' }
+    );
+
+    console.log('\n🔑 Token JWT pour les tests API:');
+    console.log(token);
+    
+    console.log('\n📝 Commande curl pour tester l\'API messages:');
+    console.log(`curl -X GET "http://localhost:5000/api/chat/conversations/68ae0861745ae092658290de/messages" \\`);
+    console.log(`-H "Content-Type: application/json" \\`);
+    console.log(`-H "Authorization: Bearer ${token}"`);
+    
+    console.log('\n👤 Informations utilisateur:');
+    console.log({
+      id: testClient._id,
+      email: testClient.email,
+      role: testClient.role,
+      name: testClient.name
+    });
 
     process.exit(0);
   } catch (error) {

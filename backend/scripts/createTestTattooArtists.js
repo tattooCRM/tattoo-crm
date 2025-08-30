@@ -12,8 +12,6 @@ async function createTestTattooArtists() {
       useUnifiedTopology: true,
     });
     
-    console.log('✅ Connecté à MongoDB');
-    console.log('🔗 URI utilisée:', mongoURI.replace(/:[^:]+@/, ':***@')); // Masquer le mot de passe
 
     // Créer des tatoueurs de test s'ils n'existent pas
     const testArtists = [
@@ -73,12 +71,10 @@ async function createTestTattooArtists() {
       if (!artist) {
         artist = new User(userData);
         await artist.save();
-        console.log(`✅ Tatoueur créé: ${artist.name} (${artist.email})`);
       } else {
         // Mettre à jour les propriétés manquantes
         Object.assign(artist, userData);
         await artist.save();
-        console.log(`🔄 Tatoueur mis à jour: ${artist.name} (${artist.email})`);
       }
 
       // Créer ou mettre à jour la page publique
@@ -91,12 +87,10 @@ async function createTestTattooArtists() {
           isActive: true
         });
         await publicPage.save();
-        console.log(`✅ Page publique créée pour: ${artist.name}`);
       } else {
         Object.assign(publicPage, pageData);
         publicPage.isActive = true;
         await publicPage.save();
-        console.log(`🔄 Page publique mise à jour pour: ${artist.name}`);
       }
     }
 
@@ -104,37 +98,18 @@ async function createTestTattooArtists() {
     const allArtists = await User.find({ role: 'tattoo_artist' });
     const allPages = await PublicPage.find({ isActive: true }).populate('userId', 'name email');
     
-    console.log(`\n📊 Statistiques des tatoueurs:`);
-    console.log(`Total: ${allArtists.length}`);
-    console.log(`Avec page publique active: ${allArtists.filter(a => a.isPublicPageActive).length}`);
-    console.log(`Avec slug: ${allArtists.filter(a => a.slug).length}`);
-    console.log(`Pages publiques actives: ${allPages.length}`);
     
-    console.log(`\n🎨 Liste des tatoueurs disponibles:`);
     allArtists.forEach(artist => {
       const hasPublicPage = allPages.find(p => p.userId._id.toString() === artist._id.toString());
-      console.log(`- ${artist.name} (${artist.email})`);
-      console.log(`  ID: ${artist._id}`);
-      console.log(`  Slug: ${artist.slug || 'Aucun'}`);
-      console.log(`  Page publique: ${artist.isPublicPageActive ? '✅' : '❌'}`);
-      console.log(`  Page publique activé: ${hasPublicPage ? '✅' : '❌'}`);
-      console.log(`  Spécialité: ${artist.specialty || 'Non définie'}`);
-      console.log('');
     });
 
-    console.log(`\n🌐 Pages publiques actives:`);
     allPages.forEach(page => {
-      console.log(`- ${page.title} (/${page.slug})`);
-      console.log(`  Utilisateur: ${page.userId.name} (${page.userId.email})`);
-      console.log(`  Thème: ${page.theme}`);
-      console.log('');
     });
 
   } catch (error) {
     console.error('❌ Erreur:', error);
   } finally {
     await mongoose.connection.close();
-    console.log('🔌 Connexion fermée');
   }
 }
 

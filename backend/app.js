@@ -8,6 +8,10 @@ const authRoutes = require('./routes/authRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const publicPageRoutes = require('./routes/publicPageRoutes');
 const chatRoutes = require('./routes/chatRoutes');
+const quoteRoutes = require('./routes/quoteRoutes');
+
+// Import User model for debug
+const User = require('./models/User');
 
 const app = express();
 
@@ -30,11 +34,46 @@ app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/public-pages', publicPageRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/quotes', quoteRoutes);
+app.use('/api/projects', require('./routes/projectRoutes'));
+app.use('/api/clients', require('./routes/clientRoutes'));
 
-// Connexion MongoDB
-mongoose.connect(process.env.MONGO_URI)
+// Route de debug temporaire (à supprimer en production)
+app.get('/api/debug/users', async (req, res) => {
+  try {
+    const users = await User.find({}, 'name email role slug createdAt');
+    res.json({ users, total: users.length });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/debug/user/:id', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    res.json({ user: user || null, found: !!user });
+  } catch (error) {
+    res.status(500).json({ error: error.message, valid: false });
+  }
+});
+
+// Connexion MongoDB avec options de configuration
+const mongoOptions = {
+  serverSelectionTimeoutMS: 5000, // Timeout après 5 secondes
+  socketTimeoutMS: 45000,
+};
+
+mongoose.connect(process.env.MONGO_URI, mongoOptions)
   .then(() => {
-    console.log('✅ MongoDB connecté');
-    app.listen(5000, () => console.log('🚀 Serveur démarré sur le port 5000'));
+    console.log('✅ Connexion MongoDB réussie');
+    app.listen(5000, () => {
+      console.log('🚀 Serveur démarré sur le port 5000');
+    });
   })
-  .catch(err => console.error('Erreur de connexion à MongoDB :', err));
+  .catch(err => {
+    console.error('Erreur de connexion à MongoDB :', err);
+    // Démarre quand même le serveur pour les fonctionnalités qui ne nécessitent pas MongoDB
+    app.listen(5000, () => {
+      console.log('⚠️  Serveur démarré sur le port 5000 (sans MongoDB)');
+    });
+  });

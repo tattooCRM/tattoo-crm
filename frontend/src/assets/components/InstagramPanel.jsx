@@ -46,7 +46,7 @@ export default function InstagramPanel({ isOpen, onClose }) {
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-8 h-8 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full"></div>
                 <div>
-                  <p className="text-sm font-medium text-gray-800">@inkflow_studio</p>
+                  <p className="text-sm font-medium text-gray-800">@inkstudio_studio</p>
                   <p className="text-xs text-gray-500">Il y a 2h</p>
                 </div>
               </div>
@@ -69,7 +69,7 @@ export default function InstagramPanel({ isOpen, onClose }) {
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-8 h-8 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full"></div>
                 <div>
-                  <p className="text-sm font-medium text-gray-800">@inkflow_studio</p>
+                  <p className="text-sm font-medium text-gray-800">@inkstudio_studio</p>
                   <p className="text-xs text-gray-500">Hier</p>
                 </div>
               </div>

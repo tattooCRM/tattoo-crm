@@ -9,5 +9,76 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    
+    <!-- Fonction globale pour gérer les actions des boutons de devis -->
+    <script>
+      window.handleQuoteAction = async function(action, quoteId) {
+        console.log('🎯 Action devis globale:', action, quoteId);
+        
+        try {
+          // Récupérer le token depuis localStorage
+          const token = localStorage.getItem('token');
+          if (!token) {
+            alert('Vous devez être connecté pour effectuer cette action');
+            return;
+          }
+
+          // Mapper les actions
+          let apiAction = action;
+          if (action === 'accept') apiAction = 'accept_quote';
+          if (action === 'decline') apiAction = 'decline_quote';
+          if (action === 'view_pdf') {
+            // Ouvrir le PDF dans un nouvel onglet
+            window.open(`http://localhost:5000/api/quotes/${quoteId}/pdf`, '_blank');
+            return;
+          }
+
+          console.log('🚀 Appel API:', { action: apiAction, quoteId });
+          
+          // Faire l'appel API
+          const response = await fetch(`http://localhost:5000/api/quotes/${quoteId}/action`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              action: apiAction
+            })
+          });
+          
+          const result = await response.json();
+          console.log('📥 Réponse API:', result);
+          
+          if (response.ok) {
+            console.log('✅ Action réussie:', result.message);
+            
+            // Afficher une notification de succès
+            if (apiAction === 'accept_quote') {
+              alert('✅ Devis accepté ! Un projet a été créé automatiquement.');
+            } else if (apiAction === 'decline_quote') {
+              alert('❌ Devis refusé. Merci de nous avoir informés.');
+            }
+            
+            // Recharger la page pour voir les mises à jour
+            window.location.reload();
+          } else {
+            console.error('❌ Erreur API:', result.message);
+            alert(`Erreur: ${result.message}`);
+          }
+          
+        } catch (error) {
+          console.error('❌ Erreur lors de l\'action:', error);
+          alert(`Erreur: ${error.message}`);
+        }
+      };
+
+      // Fonction pour gérer les événements React
+      window.dispatchQuoteAction = function(action, quoteId) {
+        window.dispatchEvent(new CustomEvent('quoteAction', {
+          detail: { action, quoteId }
+        }));
+      };
+    </script>
   </body>
 </html>

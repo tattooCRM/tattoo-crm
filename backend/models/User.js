@@ -2,11 +2,13 @@ const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
     name: { type: String, required: true },
+    prenom: { type: String }, // Prénom de l'utilisateur
+    nom: { type: String }, // Nom de famille de l'utilisateur
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: {
         type: String,
-        enum: ['client', 'tattoo_artist', 'admin'],
+        enum: ['client', 'tattoo_artist', 'admin', 'user'],
         default: 'client'
     },
     // Champs spécifiques aux tatoueurs
@@ -28,5 +30,12 @@ const userSchema = new mongoose.Schema({
     isPublicPageActive: { type: Boolean, default: false }
 }, { timestamps: true });
 
+// Middleware pour convertir 'user' en 'client' automatiquement
+userSchema.pre('save', function(next) {
+    if (this.role === 'user') {
+        this.role = 'client';
+    }
+    next();
+});
 
 module.exports = mongoose.model('User', userSchema);

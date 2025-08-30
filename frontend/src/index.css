@@ -2,6 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Styles pour les messages de devis HTML */
+.quote-html-message button {
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.quote-html-message button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+}
+
+.quote-html-message button:active {
+  transform: translateY(0);
+}
+
+/* Assurer que les boutons sont cliquables */
+.quote-html-message {
+  pointer-events: auto;
+}
+
+.quote-html-message * {
+  pointer-events: auto;
+}
+
 @layer utilities {
   .line-clamp-2 {
     display: -webkit-box;
@@ -55,4 +79,48 @@
 .project-message [style*="backdrop-filter"] {
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
+}
+
+/* Styles pour les messages de devis HTML */
+.quote-message {
+  width: 100%;
+  max-width: none;
+}
+
+.quote-message div {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Assurer la compatibilité avec les propriétés CSS modernes pour les devis */
+.quote-message * {
+  box-sizing: border-box;
+}
+
+/* Support des dégradés dans le texte pour Safari */
+.quote-message [style*="background-clip: text"] {
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Support du backdrop-filter pour tous les navigateurs */
+.quote-message [style*="backdrop-filter"] {
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+/* Support des boutons dans les messages de devis */
+.quote-message button {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.quote-message button:hover {
+  opacity: 0.8;
+  transform: translateY(-1px);
+}
+
+.quote-message a:hover {
+  opacity: 0.8;
+  transform: translateY(-1px);
 }

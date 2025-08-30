@@ -64,7 +64,6 @@ export const useChat = () => {
 
   // Envoyer un message (simulation)
   const sendMessage = useCallback(async (conversationId, content) => {
-    console.log('Envoi message:', conversationId, content);
     // Simulation d'envoi réussi
     return Promise.resolve({ 
       id: Date.now(),

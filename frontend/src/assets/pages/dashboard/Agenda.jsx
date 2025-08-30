@@ -54,8 +54,8 @@ export default function Agenda() {
     
     // Couleurs pour les événements
     const eventColors = [
-        "bg-blue-500", "bg-green-500", "bg-purple-500", "bg-pink-500", 
-        "bg-indigo-500", "bg-red-500", "bg-yellow-500", "bg-teal-500",
+        "bg-blue-500", "bg-green-500", "bg-gray-500", "bg-pink-500", 
+        "bg-gray-500", "bg-red-500", "bg-yellow-500", "bg-teal-500",
         "bg-orange-500", "bg-cyan-500"
     ];
     
@@ -122,14 +122,34 @@ export default function Agenda() {
     useEffect(() => {
         if (!userId) return;
 
-        fetch(`http://localhost:5000/api/events/${userId}`)
-            .then((res) => res.json())
+        const token = localStorage.getItem('token');
+        if (!token) {
+            console.error('Token non trouvé');
+            setLoading(false);
+            return;
+        }
+
+        fetch(`http://localhost:5000/api/events`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        })
+            .then((res) => {
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+                return res.json();
+            })
             .then((data) => {
-                setEvents(data);
+                // S'assurer que data.events est un tableau
+                const events = Array.isArray(data.events) ? data.events : Array.isArray(data) ? data : [];
+                setEvents(events);
                 setLoading(false);
             })
             .catch((err) => {
                 console.error("Erreur chargement événements :", err);
+                setEvents([]); // Définir un tableau vide en cas d'erreur
                 setLoading(false);
             });
     }, [userId]);
@@ -152,8 +172,6 @@ export default function Agenda() {
             color: formData.color,
         };
 
-        console.log("Données envoyées au backend :", newEvent);
-        console.log("UserId utilisé :", userId);
 
         fetch("http://localhost:5000/api/events", {
             method: "POST",
@@ -161,7 +179,6 @@ export default function Agenda() {
             body: JSON.stringify(newEvent),
         })
             .then(res => {
-                console.log('Statut de la réponse:', res.status);
                 if (!res.ok) {
                     return res.json().then(data => {
                         throw new Error(data.message || `Erreur ${res.status}: ${res.statusText}`);
@@ -299,7 +316,6 @@ export default function Agenda() {
                 );
                 if (showSuccessMessage) {
                     // Optionnel: ajouter une notification toast ici
-                    console.log('✅ Événement déplacé avec succès');
                 }
             })
             .catch(err => {
@@ -323,7 +339,7 @@ export default function Agenda() {
         if (!over) return;
         
         // Récupérer l'événement déplacé
-        const draggedEvent = events.find(ev => ev._id === active.id);
+        const draggedEvent = Array.isArray(events) ? events.find(ev => ev._id === active.id) : null;
         if (!draggedEvent) return;
         
         // Parser les informations de destination depuis l'id du droppable
@@ -474,8 +490,9 @@ export default function Agenda() {
 
     // Calculer le nombre d'événements pour la semaine en cours
     const getWeekEventsCount = useCallback(() => {
+        if (!Array.isArray(events)) return 0;
         const weekDates = days.map(day => format(day, "yyyy-MM-dd"));
-        const weekEvents = events.filter(event => weekDates.includes(event.date));
+        const weekEvents = events.filter(event => weekDates.includes(event?.date));
         return weekEvents.length;
     }, [days, events]);
 
@@ -581,11 +598,15 @@ export default function Agenda() {
                                 >
                                     {(() => {
                                         const dayStr = format(day, "yyyy-MM-dd");
+                                        // S'assurer que events est un tableau avant d'utiliser filter
+                                        if (!Array.isArray(events)) {
+                                            return null;
+                                        }
                                         // Afficher tous les événements qui tombent dans ce créneau de 2h
                                         const filteredEvents = events.filter((ev) => {
-                                            if (ev.date !== dayStr) return false;
+                                            if (!ev || ev.date !== dayStr) return false;
                                             
-                                            const eventHour = parseInt(ev.time.split(':')[0]);
+                                            const eventHour = parseInt(ev.time?.split(':')[0] || '0');
                                             const slotHour = parseInt(hour.split(':')[0]);
                                             
                                             // L'événement est dans ce créneau de 2h

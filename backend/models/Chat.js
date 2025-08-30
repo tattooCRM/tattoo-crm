@@ -58,12 +58,16 @@ const messageSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['text', 'image', 'file', 'project', 'system'],
+    enum: ['text', 'image', 'file', 'project', 'system', 'quote'],
     default: 'text'
   },
   fileUrl: String, // Pour les images/fichiers
   fileName: String,
   fileSize: Number,
+  metadata: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  }, // Pour stocker des données supplémentaires (ex: info devis)
   isRead: {
     type: Boolean,
     default: false

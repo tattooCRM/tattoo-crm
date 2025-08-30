@@ -6,7 +6,6 @@ const bcrypt = require('bcryptjs');
 const createTempUsers = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);
-    console.log('✅ MongoDB connecté');
 
     // Supprimer les utilisateurs temporaires s'ils existent
     await User.deleteMany({ email: { $in: ['temp-client@test.com', 'temp-tattoo@test.com'] } });
@@ -37,9 +36,6 @@ const createTempUsers = async () => {
     await tempClient.save();
     await tempTattooArtist.save();
 
-    console.log('✅ Utilisateurs temporaires créés:', tempClient.email, tempTattooArtist.email);
-    console.log('Client ID:', tempClient._id);
-    console.log('Tattoo Artist ID:', tempTattooArtist._id);
 
     process.exit(0);
   } catch (error) {

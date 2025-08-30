@@ -4,7 +4,7 @@ import { usePublicPages } from "../../hooks/usePublicPages";
 import { useToast } from "../../hooks/useToast";
 import ConfirmModal from "./ConfirmModal";
 
-export default function PublicPageBox({ hasPage, setShowPageModal }) {
+export default function PublicPageBox({ hasPage, setShowPageModal, onPageUpdated }) {
   const { page, deletePage, refreshPage } = usePublicPages();
   const { toast } = useToast();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -19,6 +19,12 @@ export default function PublicPageBox({ hasPage, setShowPageModal }) {
       setIsDeleting(true);
       await deletePage();
       toast.success("Page supprimée avec succès !");
+      
+      // Notifier le parent de la suppression
+      if (onPageUpdated) {
+        onPageUpdated();
+      }
+      
       // Force un refresh du composant parent
       setTimeout(() => {
         refreshPage();

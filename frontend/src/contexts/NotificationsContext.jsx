@@ -23,7 +23,7 @@ export const NotificationsProvider = ({ children }) => {
     if (!hasWelcome) {
       addNotification({
         type: 'welcome',
-        title: '🎉 Bienvenue dans votre espace InkFlow !',
+        title: '🎉 Bienvenue dans votre espace InkStudio !',
         message: 'Gérez vos rendez-vous, clients et plus encore en toute simplicité.',
         icon: '✨'
       });
@@ -45,7 +45,6 @@ export const NotificationsProvider = ({ children }) => {
       setNotifications(prev => {
         const cleaned = prev.filter(n => n.createdAt > sevenDaysAgo);
         if (cleaned.length !== prev.length) {
-          console.log(`🧹 ${prev.length - cleaned.length} notifications anciennes supprimées`);
         }
         return cleaned;
       });

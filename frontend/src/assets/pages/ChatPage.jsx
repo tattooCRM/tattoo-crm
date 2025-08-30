@@ -4,12 +4,16 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useChat } from '../../hooks/useChat';
 import ProjectMessage from '../components/ProjectMessage';
+import QuoteModal from '../../components/QuoteModal';
+import QuoteMessage from '../../components/QuoteMessage';
 
 export default function ChatPage() {
   const [selectedChat, setSelectedChat] = useState(null);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [pendingConversationId, setPendingConversationId] = useState(null);
+  const [quoteModalOpen, setQuoteModalOpen] = useState(false);
+  const [selectedQuoteId, setSelectedQuoteId] = useState(null);
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -25,16 +29,20 @@ export default function ChatPage() {
 
   // Définir handleSelectChat AVANT les useEffect qui l'utilisent
   const handleSelectChat = async (chat) => {
-    console.log('🎯 Sélection conversation:', chat.id, chat.artistName || chat.clientName);
     setSelectedChat(chat);
     try {
       // Charger les messages réels de la conversation
-      console.log('📨 Chargement des messages pour conversation:', chat.id);
       const realMessages = await loadMessages(chat.id);
-      console.log('✅ Messages chargés:', realMessages.length, 'messages');
       
       // Formatter les messages pour l'affichage
       const formattedMessages = realMessages.map(msg => {
+        console.log('🔍 Debug formatting message:', {
+          id: msg.id,
+          type: msg.type,
+          contentPreview: msg.content ? msg.content.substring(0, 50) + '...' : 'No content',
+          contentType: typeof msg.content
+        });
+        
         let content = msg.content;
         
         // Si c'est un message projet et que le contenu est un objet, conserver l'objet
@@ -51,16 +59,15 @@ export default function ChatPage() {
           senderName: msg.senderName,
           content: content,
           timestamp: new Date(msg.timestamp),
-          type: msg.type
+          type: msg.type,
+          metadata: msg.metadata // IMPORTANT: Conserver les métadonnées
         };
       });
       
       setMessages(formattedMessages);
-      console.log('💬 Messages formatés et affichés:', formattedMessages.length);
       
       // Marquer comme lu
       if (chat.unreadCount > 0) {
-        console.log('📖 Marquage conversation comme lue');
         await markConversationAsRead(chat.id);
       }
     } catch (error) {
@@ -89,14 +96,12 @@ export default function ChatPage() {
   // Gérer la conversation à ouvrir depuis la navigation
   useEffect(() => {
     if (location.state?.conversationId) {
-      console.log('🎯 Conversation à ouvrir:', location.state.conversationId);
       setPendingConversationId(location.state.conversationId);
       
       // Nettoyer le state de navigation pour éviter les boucles
       navigate('/chat', { replace: true });
       
       // Toujours recharger les conversations pour être sûr d'avoir la nouvelle
-      console.log('🔄 Rechargement forcé des conversations...');
       loadConversations();
     }
   }, [location.state, navigate, loadConversations]);
@@ -104,8 +109,7 @@ export default function ChatPage() {
   // Ouvrir la conversation une fois qu'elle est disponible
   useEffect(() => {
     if (pendingConversationId && conversations.length > 0) {
-      console.log('🎯 Tentative d\'ouverture automatique de la conversation:', pendingConversationId);
-      console.log('📋 Conversations disponibles:', conversations.map(c => ({ 
+      console.log('Searching for conversation:', conversations.map(c => ({
         id: c.id, 
         name: c.otherParticipantName || c.artistName || c.clientName 
       })));
@@ -115,7 +119,6 @@ export default function ChatPage() {
       );
       
       if (targetConversation) {
-        console.log('✅ Conversation trouvée et sélectionnée:', targetConversation);
         setSelectedChat(targetConversation);
         
         // Charger et afficher les messages immédiatement
@@ -126,17 +129,12 @@ export default function ChatPage() {
         
         // Afficher un message de succès si fourni
         if (location.state?.successMessage) {
-          console.log('✅ Message de succès:', location.state.successMessage);
           // Vous pouvez ajouter ici une notification toast si vous en avez une
         }
       } else {
-        console.log('⚠️ Conversation non trouvée, nouvelle tentative dans 2s...');
-        console.log('🔍 ID recherché:', pendingConversationId);
-        console.log('📝 IDs disponibles:', conversations.map(c => c.id));
         
         // Si la conversation n'est pas encore disponible, réessayer dans 2 secondes
         const retryTimer = setTimeout(() => {
-          console.log('🔄 Nouvelle tentative de recherche de conversation...');
           loadConversations();
         }, 2000);
         
@@ -147,34 +145,204 @@ export default function ChatPage() {
 
   // Utilisation du hook useChat pour les données réelles
 
+  // Gérer l'ouverture de la modal de devis
+  useEffect(() => {
+    const handleQuoteButtonClick = (event) => {
+      if (event.target.classList.contains('quote-view-button')) {
+        const quoteId = event.target.getAttribute('data-quote-id');
+        setSelectedQuoteId(quoteId);
+        setQuoteModalOpen(true);
+      }
+    };
+
+    document.addEventListener('click', handleQuoteButtonClick);
+    
+    // Gestionnaire pour les messages PostMessage des boutons HTML
+    const handlePostMessage = async (event) => {
+      if (event.data && event.data.type === 'quote_action') {
+        const { action, quoteId } = event.data;
+        console.log('🎯 Action reçue via PostMessage:', { action, quoteId });
+        
+        try {
+          const response = await fetch(`http://localhost:5000/api/quotes/${quoteId}/action`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+              action: action === 'accept' ? 'accept_quote' : 'decline_quote',
+              conversationId: selectedChat?.id
+            })
+          });
+          
+          if (!response.ok) {
+            throw new Error('Erreur lors de l\'action sur le devis');
+          }
+          
+          const result = await response.json();
+          console.log('✅ Action réussie:', result);
+          
+          // Recharger les messages pour voir la mise à jour
+          if (selectedChat) {
+            handleSelectChat(selectedChat);
+          }
+          
+        } catch (error) {
+          console.error('❌ Erreur action devis:', error);
+        }
+      }
+    };
+
+    // Gestionnaire pour les événements personnalisés des boutons HTML
+    const handleCustomEvent = async (event) => {
+      const { action, quoteId } = event.detail;
+      console.log('🎯 Action reçue via CustomEvent:', { action, quoteId });
+      
+      try {
+        // Gérer l'action "Voir PDF" directement
+        if (action === 'view_pdf') {
+          window.open(`http://localhost:5000/api/quotes/${quoteId}/pdf`, '_blank');
+          return;
+        }
+        
+        const response = await fetch(`http://localhost:5000/api/quotes/${quoteId}/action`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({
+            action: action === 'accept' ? 'accept_quote' : 'decline_quote',
+            conversationId: selectedChat?.id
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Erreur lors de l\'action sur le devis');
+        }
+        
+        const result = await response.json();
+        console.log('✅ Action réussie:', result);
+        
+        // Recharger les messages pour voir la mise à jour
+        if (selectedChat) {
+          handleSelectChat(selectedChat);
+        }
+        
+      } catch (error) {
+        console.error('❌ Erreur action devis:', error);
+      }
+    };
+    
+    window.addEventListener('message', handlePostMessage);
+    window.addEventListener('quoteAction', handleCustomEvent);
+    
+    return () => {
+      document.removeEventListener('click', handleQuoteButtonClick);
+      window.removeEventListener('message', handlePostMessage);
+    };
+  }, [selectedChat]);
+
+  const closeQuoteModal = () => {
+    setQuoteModalOpen(false);
+    setSelectedQuoteId(null);
+    // Recharger les messages pour voir les changements de statut
+    if (selectedChat) {
+      handleSelectChat(selectedChat);
+    }
+  };
+
   const handleBackToList = () => {
     setSelectedChat(null);
     setMessages([]);
   };
 
-  const goBackToClient = () => {
-    navigate('/client');
+  // Gérer les actions des boutons de devis
+  const handleQuoteButtonAction = async (button, quoteId) => {
+    try {
+      console.log('🎯 Action bouton devis:', { action: button.action, quoteId });
+      
+      // Pour les actions qui nécessitent une API call (accepter/refuser)
+      if (button.action === 'accept_quote' || button.action === 'decline_quote') {
+        const response = await fetch(`http://localhost:5000/api/quotes/${quoteId}/action`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({
+            action: button.action,
+            conversationId: selectedChat?.id
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Erreur lors de l\'action sur le devis');
+        }
+        
+        const result = await response.json();
+        console.log('✅ Action réussie:', result);
+        
+        // Recharger les messages pour voir la mise à jour
+        if (selectedChat) {
+          handleSelectChat(selectedChat);
+        }
+        
+        // Afficher un message de confirmation
+        if (result.responseMessage) {
+          const confirmationMessage = {
+            id: Date.now(),
+            senderId: user?.id,
+            senderName: user?.name || 'Vous',
+            content: result.responseMessage,
+            timestamp: new Date(),
+            type: 'system'
+          };
+          
+          setMessages(prev => [...prev, confirmationMessage]);
+        }
+      }
+      
+      // Note: Les actions view_quote et download_pdf sont gérées directement dans QuoteMessage
+      
+    } catch (error) {
+      console.error('❌ Erreur action devis:', error);
+      
+      // Afficher un message d'erreur
+      const errorMessage = {
+        id: Date.now(),
+        senderId: 'system',
+        senderName: 'Système',
+        content: `❌ Erreur: ${error.message}`,
+        timestamp: new Date(),
+        type: 'system'
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+    }
   };
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!message.trim() || !selectedChat) return;
 
+    const messageToSend = message.trim();
+    
+    // Ajouter le message localement d'abord pour une UX fluide
+    const tempMessage = {
+      id: Date.now(),
+      senderId: user?.id || 'client_1',
+      senderName: user?.name || user?.email || 'Vous',
+      content: messageToSend,
+      timestamp: new Date(),
+      type: 'text'
+    };
+
+    setMessages(prev => [...prev, tempMessage]);
+    setMessage('');
+    
     try {
-      // Ajouter le message localement d'abord pour une UX fluide
-      const tempMessage = {
-        id: Date.now(),
-        senderId: user?.id || 'client_1',
-        senderName: user?.name || user?.email || 'Vous',
-        content: message.trim(),
-        timestamp: new Date(),
-        type: 'text'
-      };
-
-      setMessages(prev => [...prev, tempMessage]);
-      const messageToSend = message.trim();
-      setMessage('');
-
       // Envoyer via l'API
       const sentMessage = await sendChatMessage(selectedChat.id, messageToSend);
       
@@ -192,8 +360,8 @@ export default function ChatPage() {
 
     } catch (error) {
       console.error('Erreur lors de l\'envoi du message:', error);
-      // Retirer le message de l'interface en cas d'erreur
-      setMessages(prev => prev.filter(msg => msg.id !== Date.now()));
+      // Retirer le message temporaire de l'interface en cas d'erreur
+      setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
       setMessage(messageToSend); // Remettre le message dans l'input
     }
   };
@@ -310,7 +478,7 @@ export default function ChatPage() {
       <div className="bg-white border-b px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button 
-            onClick={goBackToClient}
+            onClick={() => navigate(-1)}
             className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ArrowLeft size={16} />
@@ -380,7 +548,7 @@ export default function ChatPage() {
               >
                 {/* Avatar */}
                 <div className="relative">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-gray-500 to-gray-600 flex items-center justify-center text-white font-semibold">
                     {conv.otherParticipantAvatar || conv.artistAvatar || conv.clientAvatar}
                   </div>
                 </div>
@@ -435,7 +603,7 @@ export default function ChatPage() {
                     <ArrowLeft size={20} />
                   </button>
                   
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-gray-500 to-gray-600 flex items-center justify-center text-white font-semibold">
                     {selectedChat.otherParticipantAvatar || selectedChat.artistAvatar || selectedChat.clientAvatar}
                   </div>
                   
@@ -475,6 +643,32 @@ export default function ChatPage() {
                 {messages.map((msg) => {
                   const isOwn = msg.senderId === (user?.id || 'client_1');
                   const isProject = msg.type === 'project';
+                  const isQuote = msg.type === 'quote';
+                  const isSpecialMessage = isProject || isQuote;
+                  
+                  // Debug pour les messages de devis
+                  if (msg.content && typeof msg.content === 'string' && msg.content.includes('<div')) {
+                    console.log('🔍 Debug message:', {
+                      type: msg.type,
+                      isQuote,
+                      isProject,
+                      isSpecialMessage,
+                      contentPreview: msg.content.substring(0, 100) + '...',
+                      willRenderHTML: (isProject || isQuote) && typeof msg.content === 'string' && msg.content.includes('<div')
+                    });
+                  }
+                  
+                  // Debug log pour voir les types de messages
+                  console.log('🔍 Debug message:', {
+                    id: msg.id,
+                    type: msg.type,
+                    isProject,
+                    isQuote,
+                    isSpecialMessage,
+                    contentType: typeof msg.content,
+                    hasHTML: typeof msg.content === 'string' && msg.content.includes('<div'),
+                    contentPreview: typeof msg.content === 'string' ? msg.content.substring(0, 100) + '...' : 'not string'
+                  });
                   
                   if (isProject && typeof msg.content === 'object') {
                     // Utiliser le composant ProjectMessage pour les messages projet
@@ -488,44 +682,77 @@ export default function ChatPage() {
                       </div>
                     );
                   }
+
+                  // Messages de devis HTML stylés - PRIORITÉ MAXIMALE
+                  if (isQuote && (msg.metadata?.messageType === 'html_quote' || 
+                                  (typeof msg.content === 'string' && msg.content.includes('<div style')))) {
+                    console.log('🎨 RENDU HTML DEVIS pour:', { 
+                      id: msg.id, 
+                      type: msg.type, 
+                      messageType: msg.metadata?.messageType,
+                      preview: msg.content.substring(0, 50) 
+                    });
+                    return (
+                      <div key={msg.id} className="flex justify-center w-full">
+                        <div 
+                          dangerouslySetInnerHTML={{ __html: msg.content }}
+                          className="quote-html-message w-full max-w-md"
+                        />
+                      </div>
+                    );
+                  }
+
+                  // Messages de devis avec boutons interactifs (ancien format)
+                  if (isQuote && msg.metadata?.messageType === 'interactive_quote') {
+                    return (
+                      <div key={msg.id} className="flex justify-center">
+                        <QuoteMessage
+                          message={msg}
+                          isOwn={isOwn}
+                          currentUserId={user?.id}
+                          onButtonClick={handleQuoteButtonAction}
+                        />
+                      </div>
+                    );
+                  }
                   
                   // Messages texte normaux
                   return (
                     <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
                       <div className={`${
-                        isProject 
-                          ? 'max-w-full' // Messages projet prennent plus de place
+                        isSpecialMessage 
+                          ? 'max-w-full' // Messages projet et devis prennent plus de place
                           : 'max-w-xs lg:max-w-md'
                       } ${
-                        isProject
-                          ? '' // Pas de style par défaut pour les messages projet
+                        isSpecialMessage
+                          ? '' // Pas de style par défaut pour les messages projet et devis
                           : `px-4 py-3 rounded-2xl ${
                               isOwn 
                                 ? 'bg-black text-white rounded-br-sm' 
                                 : 'bg-white text-gray-900 rounded-bl-sm shadow-sm border'
                             }`
                       }`}>
-                        {!isOwn && !isProject && (
+                        {!isOwn && !isSpecialMessage && (
                           <p className="text-xs font-semibold mb-2 text-gray-600">
                             {msg.senderName}
                           </p>
                         )}
                         
                         {isProject && typeof msg.content === 'string' && msg.content.includes('<div') ? (
-                          // Rendu HTML pour les messages projet avec CSS
+                          // Rendu HTML seulement pour les messages projet (les devis sont gérés plus haut)
                           <div 
                             dangerouslySetInnerHTML={{ __html: msg.content }}
                             className="project-message"
                           />
                         ) : (
                           <div>
-                            <p className={isProject ? "text-sm leading-relaxed whitespace-pre-wrap" : "text-sm leading-relaxed"}>
+                            <p className={isSpecialMessage ? "text-sm leading-relaxed whitespace-pre-wrap" : "text-sm leading-relaxed"}>
                               {typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content)}
                             </p>
                           </div>
                         )}
                         
-                        {!isProject && (
+                        {!isSpecialMessage && (
                           <p className={`text-xs mt-2 ${
                             isOwn ? 'text-gray-300' : 'text-gray-500'
                           }`}>
@@ -590,6 +817,16 @@ export default function ChatPage() {
           )}
         </div>
       </div>
+
+      {/* Modal de devis */}
+      {quoteModalOpen && (
+        <QuoteModal 
+          isOpen={quoteModalOpen}
+          onClose={closeQuoteModal}
+          quoteId={selectedQuoteId}
+          userId={user?.id}
+        />
+      )}
     </div>
   );
 }

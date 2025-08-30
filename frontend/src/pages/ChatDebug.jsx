@@ -11,7 +11,6 @@ const ChatDebug = () => {
   const [debugInfo, setDebugInfo] = useState([]);
 
   const addDebugInfo = (message) => {
-    console.log(message);
     setDebugInfo(prev => [...prev, `${new Date().toLocaleTimeString()}: ${message}`]);
   };
 

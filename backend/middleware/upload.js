@@ -105,7 +105,6 @@ const deleteFile = (filePath) => {
   try {
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
-      console.log(`🗑️ Fichier supprimé: ${filePath}`);
     }
   } catch (error) {
     console.error(`❌ Erreur lors de la suppression du fichier ${filePath}:`, error);

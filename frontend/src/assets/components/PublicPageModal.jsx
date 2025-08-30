@@ -7,7 +7,7 @@ import { useToast } from "../../hooks/useToast";
 import HeaderImageUpload from "./HeaderImageUpload";
 import ThemeSelector from "./ThemeSelector";
 
-export default function PublicPageModal({ hasPage, setShowPageModal }) {
+export default function PublicPageModal({ hasPage, setShowPageModal, onPageUpdated }) {
   const { page, savePage, loading, refreshPage } = usePublicPages();
   const { toast } = useToast();
   
@@ -38,7 +38,6 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
 
   // Mettre à jour formData quand page change (pour la modification)
   useEffect(() => {
-    console.log('📝 Page chargée dans le modal:', page);
     if (page) {
       const newFormData = {
         username: page.username || "",
@@ -56,7 +55,6 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
         openingHours: page.openingHours || "",
         pricing: page.pricing || "",
       };
-      console.log('📋 Données du formulaire mises à jour:', newFormData);
       setFormData(newFormData);
       setSelectedTheme(page.theme || "dark");
     }
@@ -195,7 +193,6 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
           });
         }
         
-        console.log('📤 Envoi FormData avec fichiers:', Object.fromEntries(formDataToSend));
         await savePage(formDataToSend, true); // true = avec FormData
         
       } else {
@@ -219,7 +216,6 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
           gallery: formData.gallery
         };
         
-        console.log('📤 Envoi JSON sans fichiers:', pageData);
         await savePage(pageData, false); // false = JSON classique
       }
       
@@ -232,6 +228,11 @@ export default function PublicPageModal({ hasPage, setShowPageModal }) {
       );
       
       setShowPageModal(false);
+      
+      // Notifier le parent que la page a été mise à jour
+      if (onPageUpdated) {
+        onPageUpdated();
+      }
       
       // Force un refresh après création/modification
       setTimeout(() => {

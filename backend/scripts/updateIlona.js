@@ -5,7 +5,6 @@ const User = require('../models/User');
 async function updateIlona() {
   try {
     await mongoose.connect('mongodb+srv://t3mq:root@bennys.rkieo.mongodb.net/');
-    console.log('✅ Connexion à MongoDB réussie');
 
     // Chercher Ilona par slug ou nom
     let ilona = await User.findOne({ 
@@ -17,19 +16,15 @@ async function updateIlona() {
     });
 
     if (!ilona) {
-      console.log('❌ Utilisateur Ilona non trouvé');
       
       // Lister tous les tatoueurs
       const tattooists = await User.find({ role: 'tattoo_artist' });
-      console.log('📋 Tatoueurs existants:');
       tattooists.forEach(t => {
-        console.log(`- ${t.name} (${t.email}) | Slug: ${t.slug || 'N/A'}`);
       });
       
       return;
     }
 
-    console.log(`✅ Utilisateur trouvé: ${ilona.name} (${ilona.email})`);
 
     // Mettre à jour les données
     const updates = {
@@ -42,23 +37,14 @@ async function updateIlona() {
     };
 
     await User.findByIdAndUpdate(ilona._id, updates);
-    console.log('✅ Utilisateur mis à jour avec succès');
     
     // Vérifier les mises à jour
     const updatedUser = await User.findById(ilona._id);
-    console.log('📊 Données mises à jour:');
-    console.log(`- Nom: ${updatedUser.name}`);
-    console.log(`- Email: ${updatedUser.email}`);
-    console.log(`- Slug: ${updatedUser.slug}`);
-    console.log(`- Rôle: ${updatedUser.role}`);
-    console.log(`- Page publique active: ${updatedUser.isPublicPageActive}`);
-    console.log(`- Spécialité: ${updatedUser.specialty}`);
 
   } catch (error) {
     console.error('❌ Erreur:', error);
   } finally {
     await mongoose.disconnect();
-    console.log('📴 Déconnexion de MongoDB');
   }
 }
 

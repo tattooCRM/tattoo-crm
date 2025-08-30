@@ -25,9 +25,8 @@ export const useTattooArtists = () => {
     }
   }, [user, isAuthenticated]);
 
-  // Créer une conversation avec un tatoueur
+  // Créer une conversation avec un tatoueur (utilisateur authentifié)
   const startConversationWith = useCallback(async (tattooArtistId, projectType = 'autre', projectData = null) => {
-    console.log('🚀 Création conversation:', { tattooArtistId, projectType, hasProjectData: !!projectData });
     
     try {
       if (!tattooArtistId) {
@@ -35,7 +34,6 @@ export const useTattooArtists = () => {
       }
       
       const conversation = await chatAPI.createConversation(tattooArtistId, projectType, projectData);
-      console.log('✅ Conversation créée avec succès:', conversation);
       
       return conversation;
     } catch (err) {
@@ -43,10 +41,39 @@ export const useTattooArtists = () => {
       
       // Messages d'erreur plus explicites
       let errorMessage = err.message;
-      if (err.message.includes('Tatoueur introuvable')) {
+      if (err.message.includes('Tatoueur non trouvé') || err.message.includes('Tatoueur introuvable')) {
         errorMessage = 'Une erreur s\'est produite lors de l\'envoi de votre demande. Le tatoueur recevra votre message dès qu\'il sera de retour !';
       } else if (err.message.includes('ID de tatoueur invalide')) {
         errorMessage = 'Impossible de contacter ce tatoueur (ID invalide)';
+      } else if (err.message.includes('network') || err.message.includes('fetch')) {
+        errorMessage = 'Erreur de connexion. Vérifiez votre connexion internet';
+      }
+      
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
+  }, []);
+
+  // Créer une conversation publique (pour les visiteurs non connectés)
+  const submitPublicProject = useCallback(async (tattooArtistSlug, clientName, clientEmail, projectType = 'autre', projectData = null) => {
+    
+    try {
+      if (!tattooArtistSlug || !clientName || !clientEmail) {
+        throw new Error('Données manquantes pour la demande');
+      }
+      
+      const conversation = await chatAPI.createPublicConversation(tattooArtistSlug, clientName, clientEmail, projectType, projectData);
+      
+      return conversation;
+    } catch (err) {
+      console.error('❌ Erreur création conversation publique:', err);
+      
+      // Messages d'erreur plus explicites
+      let errorMessage = err.message;
+      if (err.message.includes('Tatoueur non trouvé')) {
+        errorMessage = 'Une erreur s\'est produite lors de l\'envoi de votre demande. Le tatoueur recevra votre message dès qu\'il sera de retour !';
+      } else if (err.message.includes('requis')) {
+        errorMessage = 'Veuillez remplir tous les champs obligatoires';
       } else if (err.message.includes('network') || err.message.includes('fetch')) {
         errorMessage = 'Erreur de connexion. Vérifiez votre connexion internet';
       }
@@ -85,6 +112,7 @@ export const useTattooArtists = () => {
     error,
     loadTattooArtists,
     startConversationWith,
+    submitPublicProject,
     getTattooArtistBySlug
   };
 };

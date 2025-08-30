@@ -13,20 +13,16 @@ export const useChat = () => {
   const loadConversations = useCallback(async () => {
     if (!isAuthenticated || !user) return;
     
-    console.log('🔄 Début chargement conversations...');
     setLoading(true);
     setError(null);
     try {
       const data = await chatAPI.getConversations();
-      console.log('📦 Données reçues du backend:', data);
       
       // Les données sont dans data.conversations ou directement dans data
       const conversationsList = data.conversations || data || [];
-      console.log('📦 Liste des conversations:', conversationsList.length, 'conversations');
       
       // Transformer les données pour le frontend
       const transformedConversations = conversationsList.map(conv => {
-        console.log('🔄 Transformation conversation:', conv.id || conv._id, conv.otherParticipantName);
         
         // Les participants sont déjà dans le bon format depuis le backend
         const clientParticipant = conv.participants?.find(p => p.role === 'client');
@@ -60,7 +56,6 @@ export const useChat = () => {
         };
       });
       
-      console.log('✅ Conversations transformées:', transformedConversations.length);
       setConversations(transformedConversations);
       
       // Calculer le nombre total de messages non lus
@@ -113,7 +108,6 @@ export const useChat = () => {
     }
     
     try {
-      console.log('📨 Chargement messages pour conversation:', conversationId);
       const response = await chatAPI.getMessages(conversationId);
       
       // Vérifier si la réponse contient bien des messages
@@ -121,7 +115,6 @@ export const useChat = () => {
         throw new Error('Format de réponse invalide');
       }
       
-      console.log('✅ Messages reçus:', response.length);
       return response;
     } catch (err) {
       console.error('❌ Erreur chargement messages:', err);

@@ -4,6 +4,7 @@ import { Instagram, ExternalLink, Mail, Phone, MapPin, Clock, Star, MessageCircl
 import { usePublicPages } from '../../hooks/usePublicPages';
 import { useTattooArtists } from '../../hooks/useTattooArtists';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../hooks/useToast';
 import { getThemeById } from '../../utils/themes';
 import ProjectContactModal from '../components/ProjectContactModal';
 
@@ -11,8 +12,9 @@ export default function ArtistPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { fetchPageBySlug } = usePublicPages({ autoLoadUserPage: false });
-  const { getTattooArtistBySlug, startConversationWith } = useTattooArtists();
+  const { getTattooArtistBySlug, startConversationWith, submitPublicProject } = useTattooArtists();
   const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
   const [page, setPage] = useState(null);
   const [tattooArtist, setTattooArtist] = useState(null);
   const [error, setError] = useState(null);
@@ -20,29 +22,56 @@ export default function ArtistPage() {
   const [showProjectModal, setShowProjectModal] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+    let debounceTimeout;
+    
     const loadPage = async () => {
-      try {
-        const data = await fetchPageBySlug(slug);
-        setPage(data);
+      if (!slug) return;
+      
+      // Debounce les requêtes pour éviter les appels multiples
+      debounceTimeout = setTimeout(async () => {
+        if (!isMounted) return;
         
-        // Essayer de récupérer aussi les infos du tatoueur depuis l'API chat
+        setLoading(true);
+        setError(null);
+        
         try {
-          console.log('Récupération tatoueur pour slug:', slug);
-          const artistData = await getTattooArtistBySlug(slug);
-          console.log('Tatoueur trouvé:', artistData);
-          setTattooArtist(artistData);
+          const data = await fetchPageBySlug(slug);
+          if (isMounted) {
+            setPage(data);
+          }
+          
+          // Essayer de récupérer aussi les infos du tatoueur depuis l'API chat
+          try {
+            const artistData = await getTattooArtistBySlug(slug);
+            if (isMounted) {
+              setTattooArtist(artistData);
+            }
+          } catch (err) {
+            // Pas grave si on ne trouve pas le tatoueur dans l'API chat
+            console.log('Info tatoueur non trouvée:', err.message);
+          }
         } catch (err) {
-          // Pas grave si on ne trouve pas le tatoueur dans l'API chat
-          console.log('Tatoueur non trouvé dans l\'API chat:', err.message);
+          if (isMounted) {
+            setError(err.message);
+            console.error('Erreur chargement page:', err);
+          }
+        } finally {
+          if (isMounted) {
+            setLoading(false);
+          }
         }
-      } catch (err) {
-        setError(err.message);
-      }
+      }, 100); // Debounce de 100ms
     };
 
-    if (slug) {
-      loadPage();
-    }
+    loadPage();
+    
+    return () => {
+      isMounted = false;
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
+    };
   }, [slug, fetchPageBySlug, getTattooArtistBySlug]);
 
   // Fonction pour ouvrir le formulaire projet
@@ -71,62 +100,103 @@ export default function ArtistPage() {
       
       if (!artistToContact && page) {
         // Utiliser les données de la page publique si disponible
+        const tattooArtistId = page.userId?._id || page.userId; // userId peut être un objet peuplé ou un ID
         artistToContact = {
-          _id: page.userId?._id || page._id,
+          _id: tattooArtistId,
           name: page.title || page.username,
           slug: page.slug
         };
-        console.log('🎯 Utilisation des données de la page publique:', artistToContact);
+        console.log('Debug artistToContact:', {
+          pageId: page._id, 
+          userId: page.userId, 
+          userIdType: typeof page.userId,
+          extractedId: tattooArtistId 
+        });
       }
       
       if (!artistToContact) {
         throw new Error('Impossible de contacter ce tatoueur. Aucune information disponible.');
       }
 
-      console.log('📬 Création conversation avec:', {
-        artistId: artistToContact._id,
+      console.log('Debug submit project:', {
+        artistSlug: artistToContact.slug,
         artistName: artistToContact.name,
-        projectType: 'autre'
+        projectType: 'autre',
+        isAuthenticated
       });
 
-      // Créer la conversation avec les données du projet
-      const result = await startConversationWith(artistToContact._id, 'autre', projectData);
-      console.log('✅ Conversation créée:', result);
+      let result;
 
-      // Extraire l'ID de conversation (peut être dans result.conversation._id ou result.conversation.id)
-      const conversationId = result.conversation?._id || result.conversation?.id || result._id || result.id;
-      
-      if (!conversationId) {
-        throw new Error('ID de conversation manquant dans la réponse');
+      if (isAuthenticated && user) {
+        // Utilisateur connecté - utiliser l'API authentifiée
+        // Préférer le slug si disponible, sinon utiliser l'ID
+        const artistIdentifier = artistToContact.slug || artistToContact._id;
+        result = await startConversationWith(artistIdentifier, 'autre', projectData);
+
+        // Extraire l'ID de conversation
+        const conversationId = result.conversation?._id || result.conversation?.id || result._id || result.id;
+        
+        if (!conversationId) {
+          throw new Error('ID de conversation manquant dans la réponse');
+        }
+        
+
+        // Fermer la modal
+        setShowProjectModal(false);
+        
+        // Rediriger vers la page de chat
+        navigate('/chat', { 
+          state: { 
+            conversationId: conversationId,
+            shouldReload: true,
+            successMessage: `Votre demande a été envoyée à ${artistToContact.name} !`
+          } 
+        });
+      } else {
+        // Utilisateur non connecté - utiliser l'API publique
+        // Les données client doivent être dans projectData
+        const { clientName, clientEmail, ...actualProjectData } = projectData;
+        
+        if (!clientName || !clientEmail) {
+          throw new Error('Nom et email requis pour envoyer une demande');
+        }
+
+        // Utiliser le slug de la page ou celui de l'artiste
+        const slugToUse = artistToContact.slug || slug;
+
+        result = await submitPublicProject(
+          slugToUse, 
+          clientName, 
+          clientEmail, 
+          'autre', 
+          actualProjectData
+        );
+
+        // Fermer la modal
+        setShowProjectModal(false);
+        
+        // Afficher un message de succès avec toast
+        toast.success(
+          `Votre demande a été envoyée avec succès à ${artistToContact.name}. Vous recevrez une réponse par email.`,
+          "Demande envoyée !"
+        );
       }
-      
-      console.log('🆔 ID conversation extraite:', conversationId);
-
-      // Fermer la modal
-      setShowProjectModal(false);
-      
-      // Rediriger vers la page de chat avec un message de succès
-      navigate('/chat', { 
-        state: { 
-          conversationId: conversationId,
-          shouldReload: true,
-          successMessage: `Votre demande a été envoyée à ${artistToContact.name} !`
-        } 
-      });
     } catch (err) {
       console.error('❌ Erreur lors de la création de la conversation:', err);
       
-      // Message d'erreur plus détaillé pour l'utilisateur
+      // Message d'erreur plus détaillé pour l'utilisateur avec toast
       let errorMessage = 'Erreur lors de l\'envoi de votre demande.';
-      if (err.message.includes('Tatoueur introuvable')) {
+      if (err.message.includes('Tatoueur non trouvé')) {
         errorMessage = 'Votre demande a été envoyée ! Le tatoueur la recevra dès qu\'il sera de retour et vous répondra bientôt.';
+        toast.info(errorMessage, 'Demande envoyée');
       } else if (err.message.includes('network') || err.message.includes('fetch')) {
         errorMessage = 'Problème de connexion. Vérifiez votre connexion internet et réessayez.';
+        toast.error(errorMessage, 'Erreur de connexion');
       } else if (err.message) {
-        errorMessage = err.message;
+        toast.error(err.message, 'Erreur');
+      } else {
+        toast.error(errorMessage);
       }
-      
-      alert(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -152,7 +222,7 @@ export default function ArtistPage() {
           </p>
           <a 
             href="/" 
-            className="inline-block px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            className="inline-block px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
           >
             Retour à l'accueil
           </a>
@@ -523,7 +593,7 @@ export default function ArtistPage() {
       >
         <div className="max-w-4xl mx-auto px-6">
           <p className="opacity-75">
-            © 2024 {displayPage.title || displayPage.username} • Créé avec InkFlow
+            © 2024 {displayPage.title || displayPage.username} • Créé avec InkStudio
           </p>
         </div>
       </footer>

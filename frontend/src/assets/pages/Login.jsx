@@ -22,7 +22,6 @@ function Login() {
       const result = await login(email, password);
 
       if (result.success) {
-        console.log('Connexion réussie:', result.user);
         
         // Rediriger selon le rôle
         if (result.user.role === 'tattoo_artist' || result.user.role === 'artist' || result.user.role === 'tatoueur') {
@@ -47,7 +46,7 @@ function Login() {
         
         {/* Titre */}
         <h1 className="text-3xl font-bold mb-6 text-center font-serif tracking-wider">
-          InkFlow
+          InkStudio
         </h1>
 
         {/* Message d'erreur */}
@@ -68,7 +67,7 @@ function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
               placeholder="exemple@email.com"
             />
           </div>
@@ -82,7 +81,7 @@ function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-2 pr-10 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-2 pr-10 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
                 placeholder="••••••••"
               />
               <button
@@ -100,14 +99,14 @@ function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 transition-colors rounded-md font-semibold disabled:opacity-50"
+            className="w-full py-2 bg-gray-800 hover:bg-gray-900 transition-colors rounded-md font-semibold disabled:opacity-50"
           >
             {loading ? 'Connexion...' : 'Se connecter'}
           </button>
 
           {/* Lien vers inscription */}
           <div className="text-sm text-center mt-2">
-            <a href="/signup" className="text-indigo-400 hover:underline">
+            <a href="/signup" className="text-gray-400 hover:underline">
               Pas encore inscrit ? Créez un compte
             </a>
           </div>

@@ -17,7 +17,7 @@ export default function Sidebar({ onInstagramToggle, isInstagramOpen, agendaBadg
     window.location.href = '/';
   };
   return (
-    <div className="flex flex-col w-64 bg-gray-200 text-black p-4 relative z-10" style={{ height: '105vh', minHeight: '100vh', maxHeight: 'none' }}>
+    <div className="flex flex-col w-64 bg-gray-200 text-black p-4 h-screen overflow-y-auto">
       
       {/* --------- PARTIE HAUT --------- */}
       <div className="flex-1">
@@ -26,7 +26,7 @@ export default function Sidebar({ onInstagramToggle, isInstagramOpen, agendaBadg
           <div className="bg-white shadow-md p-2 rounded-lg">
             <LayoutDashboard size={20}/>
           </div>
-          <h1 className="font-bold text-lg">InkFlow</h1>
+          <h1 className="font-bold text-lg">InkStudio</h1>
         </div>
 
         {/* Menu Principal */}
@@ -41,7 +41,7 @@ export default function Sidebar({ onInstagramToggle, isInstagramOpen, agendaBadg
         {/* Finances */}
         <SectionTitle title="Finances"/>
         <nav className="space-y-2">
-          <SidebarItem to="/devis" icon={<Search size={18}/>} label="Devis"/>
+          <SidebarItem to="/devis" icon={<FileText size={18}/>} label="Devis"/>
           <SidebarItem to="/paiements" icon={<Tag size={18}/>} label="Paiements"/>
           <SidebarItem to="/stock" icon={<Users size={18}/>} label="Stock"/>
         </nav>
@@ -55,7 +55,6 @@ export default function Sidebar({ onInstagramToggle, isInstagramOpen, agendaBadg
             label="Chat Client"
             badge={unreadCount > 0 ? unreadCount.toString() : undefined}
           />
-          <SidebarItem to="/messages" icon={<Mail size={18} />} label="Messages"/>
         </nav>
         <div>
           <SidebarItem
@@ -72,13 +71,6 @@ export default function Sidebar({ onInstagramToggle, isInstagramOpen, agendaBadg
       <div className="mt-auto pt-4 border-t border-gray-400">
         <SidebarItem to="/support" icon={<HelpCircle size={18}/>} label="Aide & Support"/>
         <SidebarItem to="/settings" icon={<Settings size={18}/>} label="Settings"/>
-        
-        {/* Bouton de déconnexion */}
-        <SidebarItem 
-          icon={<LogOut size={18}/>} 
-          label="Déconnexion" 
-          onClick={handleLogout}
-        />
 
         {/* Profil utilisateur */}
         <div className="flex items-center gap-3 mt-4 p-2 rounded-lg bg-gray-300">

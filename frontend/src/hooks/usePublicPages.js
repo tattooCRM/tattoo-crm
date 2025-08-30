@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 // Hook pour gérer les pages publiques
 export function usePublicPages(options = {}) {
@@ -15,7 +15,7 @@ export function usePublicPages(options = {}) {
     };
 
     // Charger la page de l'utilisateur
-    const fetchUserPage = async () => {
+    const fetchUserPage = useCallback(async () => {
         const userId = getUserId();
         if (!userId) {
             setError(null);
@@ -38,9 +38,7 @@ export function usePublicPages(options = {}) {
                 setLastUpdate(Date.now());
                 return null;
             } else {
-                console.log('Erreur fetchUserPage:', response.status, response.statusText);
                 const errorData = await response.json().catch(() => ({}));
-                console.log('Détails erreur fetchUserPage:', errorData);
                 throw new Error('Erreur lors du chargement de la page');
             }
         } catch (err) {
@@ -54,7 +52,7 @@ export function usePublicPages(options = {}) {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     // Créer ou mettre à jour une page
     const savePage = async (pageData, isFormData = false) => {
@@ -75,7 +73,6 @@ export function usePublicPages(options = {}) {
             
             const method = existingPage ? 'PUT' : 'POST';
             
-            console.log('Envoi des données:', { method, url, isFormData, userId, existingPage: !!existingPage });
             
             let requestOptions;
             
@@ -118,14 +115,11 @@ export function usePublicPages(options = {}) {
 
             const response = await fetch(url, requestOptions);
 
-            console.log('Réponse:', response.status, response.statusText);
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                console.log('Détails erreur:', errorData);
                 
                 if (response.status === 400 && errorData.message?.includes('déjà') && !isFormData) {
-                    console.log('Page existante détectée, tentative de mise à jour...');
                     
                     // Refetch pour obtenir la page existante
                     const refetchedPage = await fetchUserPage();
@@ -176,10 +170,18 @@ export function usePublicPages(options = {}) {
             setError(null);
             setLastUpdate(Date.now());
             
-            // Refresh automatique après sauvegarde
-            setTimeout(() => {
-                fetchUserPage();
-            }, 100);
+            // Refresh automatique après sauvegarde pour s'assurer d'avoir les données à jour
+            setTimeout(async () => {
+                try {
+                    const refreshedPage = await fetchUserPage();
+                    if (refreshedPage) {
+                        setPage(refreshedPage);
+                        setLastUpdate(Date.now());
+                    }
+                } catch (refreshError) {
+                    console.error('Erreur lors du refresh automatique:', refreshError);
+                }
+            }, 150);
             
             return savedPage;
         } catch (err) {
@@ -192,20 +194,39 @@ export function usePublicPages(options = {}) {
     };
 
     // Récupérer une page par slug
-    const fetchPageBySlug = async (slug) => {
+    const fetchPageBySlug = useCallback(async (slug) => {
+        if (!slug) {
+            throw new Error('Slug requis');
+        }
+        
+        // Timeout de 5 secondes pour éviter les requêtes qui traînent
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
         try {
-            const response = await fetch(`http://localhost:5000/api/public-pages/slug/${slug}`);
+            const response = await fetch(`http://localhost:5000/api/public-pages/slug/${slug}`, {
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            
             if (!response.ok) {
-                throw new Error('Page non trouvée');
+                if (response.status === 404) {
+                    throw new Error('Page non trouvée');
+                }
+                throw new Error(`Erreur ${response.status}: ${response.statusText}`);
             }
             const data = await response.json();
             return data;
         } catch (err) {
+            clearTimeout(timeoutId);
             console.error('Erreur chargement page par slug:', err);
-            setError(err.message);
+            
+            if (err.name === 'AbortError') {
+                throw new Error('Timeout - La requête a pris trop de temps');
+            }
             throw err;
         }
-    };
+    }, []);
 
     // Supprimer une page
     const deletePage = async () => {
@@ -225,8 +246,14 @@ export function usePublicPages(options = {}) {
             setError(null);
             setLastUpdate(Date.now());
             
-            // Refresh automatique après suppression
-            await fetchUserPage();
+            // Refresh automatique après suppression pour confirmer la suppression
+            setTimeout(async () => {
+                try {
+                    await fetchUserPage();
+                } catch (refreshError) {
+                    console.error('Erreur lors du refresh automatique après suppression:', refreshError);
+                }
+            }, 150);
         } catch (err) {
             console.error('Erreur suppression page:', err);
             setError(err.message);

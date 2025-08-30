@@ -22,7 +22,7 @@ export default function ClientDashboard() {
       <header className="bg-white shadow-sm border-b px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">InkFlow</h1>
+            <h1 className="text-2xl font-bold text-gray-900">InkStudio</h1>
             <span className="text-sm text-gray-500">Espace Client</span>
           </div>
           
@@ -51,7 +51,7 @@ export default function ClientDashboard() {
         {/* Message de bienvenue */}
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Bienvenue {user?.prenom || user?.nom || 'sur InkFlow'} ! 🎨
+            Bienvenue {user?.prenom || user?.nom || 'sur InkStudio'} ! 🎨
           </h2>
           <p className="text-gray-600">
             Votre espace personnel pour découvrir nos artistes tatoueurs et prendre rendez-vous.
@@ -108,8 +108,8 @@ export default function ClientDashboard() {
           {/* Galerie des artistes */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <User className="w-6 h-6 text-purple-600" />
+              <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                <User className="w-6 h-6 text-gray-600" />
               </div>
               <div>
                 <h3 className="font-semibold text-gray-900">Nos Artistes</h3>
@@ -145,7 +145,7 @@ export default function ClientDashboard() {
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4" />
-                <span>contact@inkflow.com</span>
+                <span>contact@inkstudio.com</span>
               </div>
               <p className="mt-3">
                 📍 123 Rue de l'Art, 75001 Paris
